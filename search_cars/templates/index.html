@@ -1,0 +1,58 @@
+{% extends 'base.html' %}
+
+{% block content %}
+    <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-xl-4">
+    {% for car in cars %}
+        <div class="col dark" style="padding-bottom: 24px" >
+            <div class="card bg-gray">
+                <div class="card-top">
+                {% if car.photo|length == 0 %}
+                    <img src="https://yugcleaning.ru/wp-content/themes/consultix/images/no-image-found-360x250.png" class="d-block w-100" style="object-fit: cover">
+                {% elif car.photo|length == 1 %}
+                    <div id="_{{ car.Id }}" class="carousel slide"  data-bs-ride="carousel">
+                        <div class="carousel-inner" style="height: 200px;">
+                            <img src="{{ car.photo.0 }}" class="d-block w-100" style="object-fit: cover">
+                        </div>
+                    </div>
+                {% else %}
+                    <div id="_{{ car.Id }}" class="carousel slide"  data-bs-ride="carousel">
+                    <div class="carousel-inner" style="height: 200px;">
+
+                    {% for image in car.photo %}
+                        {% if image == car.photo|first %}
+                            <div class="carousel-item active">
+                        {% else %}
+                            <div class="carousel-item">
+                        {% endif %}
+
+                    <img src="{{ image }}" class="img-responsive" style="height: 100%; width: 100%; object-fit: fill">
+                </div>
+                {% endfor %}
+                </div>
+                    <button class="carousel-control-prev" type="button" data-bs-target="#_{{ car.Id }}" data-bs-slide="prev">
+                        <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                        <span class="visually-hidden">Previous</span>
+                    </button>
+
+                    <button class="carousel-control-next" type="button" data-bs-target="#_{{ car.Id }}" data-bs-slide="next">
+                        <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                        <span class="visually-hidden">Next</span>
+                    </button>
+
+                    </div>
+                    {% endif %}
+                </div>
+
+                <div class="card-body">
+                    <a href="{{ car.url }}" >
+                        <h5 class="card-title">{{ car.marka }} {{ car.model }} {{ car.model_2 }}</h5>
+                    </a>
+                    <p class="clearfix"> Год: {{ car.year }}</p>
+                    <p> Дата появления объявления: {{ car.dt }}</p>
+                    <p> В базе с: ________</p>
+                </div>
+            </div>
+        </div>
+    {% endfor %}
+    </div>
+{% endblock %}
