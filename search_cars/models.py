@@ -17,13 +17,13 @@ class Advertisement(models.Model):
     brand = models.CharField(verbose_name="Марка", max_length=50)
     model = models.CharField(verbose_name="Модель", max_length=200)
     year = models.CharField(verbose_name="Год авто", max_length=4)
-    color = models.CharField(verbose_name='Цвет автомобиля', max_length=15)
+    color = models.CharField(verbose_name='Цвет автомобиля', max_length=15, blank=True)
     info = models.TextField(verbose_name="Текст объявление")
     site = models.CharField(verbose_name="Сайт объявления", max_length=30)
     original = models.BooleanField(verbose_name='Оригинальное объявление')
 
-    created_at = models.DateTimeField(verbose_name="Дата появления объявления", db_index=True)
-    added_at = models.DateTimeField(verbose_name="Дата добавления в базу", blank=True)
+    created_at = models.DateTimeField(verbose_name="Дата добавления в базу", db_index=True)
+    added_at = models.DateTimeField(verbose_name="Дата появления объявления", blank=True)
 
     photos = models.ManyToManyField(to='AdvertisementPhotos',
                                     verbose_name='Ссылки на фотографии')

@@ -30,11 +30,10 @@ def create_new_advertisement_threading(post_adv_data : dict, pool, logger=None):
     if Advertisement.objects.filter(advertisement_id=post_adv_data['id']).exists():
         adv = Advertisement.objects.get(advertisement_id=post_adv_data['id'])
         logger.debug(
-            'Объявление {} {} {} {} уже существует'.format(
+            'Объявление {} {} {} уже существует'.format(
                 post_adv_data['id'],
                 post_adv_data['brand'],
                 post_adv_data['model'],
-                post_adv_data['color']
             )
         )
         return adv.original
@@ -49,7 +48,6 @@ def create_new_advertisement_threading(post_adv_data : dict, pool, logger=None):
     new_adv.info               = post_adv_data['text']
     new_adv.site               = post_adv_data['site']
     new_adv.added_at           = post_adv_data['added_at']
-    new_adv.color              = post_adv_data['color']
 
     # Находим дупликаты полученного объявления
 
@@ -57,10 +55,11 @@ def create_new_advertisement_threading(post_adv_data : dict, pool, logger=None):
         year=post_adv_data['year']  ,
         brand=post_adv_data['brand']   ,
         model=post_adv_data['model'] ,
-        created_at__lt=post_adv_data['added_at'],
-        color=post_adv_data['color'],
+        added_at__lt=post_adv_data['added_at'],
         original=True
     )
+
+    print(dup_advs)
 
     # Загрузка изображений из POST запроса с созданием класса AdvertisementPhotos
 
@@ -73,10 +72,9 @@ def create_new_advertisement_threading(post_adv_data : dict, pool, logger=None):
 
         if logger:
             logger.debug(
-                'Нет подходящих объявлений для {} {} {}'.format(
+                'Нет подходящих объявлений для {} {}'.format(
                     post_adv_data['brand'],
                     post_adv_data['model'],
-                    post_adv_data['color'],
                 )
             )
 
@@ -92,11 +90,10 @@ def create_new_advertisement_threading(post_adv_data : dict, pool, logger=None):
 
         if logger:
             logger.debug(
-                'Найдено {1} {2} {3} объявлений: {0}'.format(
+                'Найдено {1} {2} объявлений: {0}'.format(
                     len(dup_advs),
                     post_adv_data['brand'],
                     post_adv_data['model'],
-                    post_adv_data['color']
                 )
             )
 

@@ -232,23 +232,27 @@ class CheckUnique(APIView):
             'brand': post_data.get('brand'),
             'model': post_data.get('model'),
             'year': post_data.get('year'),
-            'text': post_data.get('text'),
+            'text': post_data.get('adv_text'),
             'site': post_data.get('site'),
-            'added_at': post_data.get('added_at'),
+            'added_at': timezone.make_aware(datetime.fromisoformat(post_data.get('date'))),
             'links': post_data.get('photos').split(','),
-            'color': post_data.get('color'),
         }
 
         # Проверяем на наличие данного объявления
+
+        pool = ThreadPool()
 
         if Advertisement.objects.filter(advertisement_id=post_adv_data['id']).exists():
             adv = Advertisement.objects.get(advertisement_id=post_adv_data['id'])
             logger.debug('Объявление {} уже существует'.format(post_adv_data['id']))
             return JsonResponse({'unique': adv.original})
         else:
-            result = create_new_advertisement_threading(post_adv_data)
-            return JsonResponse({'unique': result})
+            result = create_new_advertisement_threading(post_adv_data, pool, logger)
 
+            pool.close()
+            pool.join()
+
+            return JsonResponse({'unique': result})
 
 
 
