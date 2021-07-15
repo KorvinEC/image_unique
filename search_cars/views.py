@@ -39,7 +39,7 @@ def index(request):
 
     link = 'http://crwl.ru/api/rest/latest/get_ads/'
     payload = {
-        'api_key' : '710090c4b15d091696d5369ee18cd3f5',
+        'api_key' : '__api_key__',
         'region'  : '3504',
         'last'    : '1'
     }
@@ -133,7 +133,7 @@ from tqdm import tqdm
 def test(request):
     link = 'http://crwl.ru/api/rest/latest/get_ads/'
     payload = {
-        'api_key' : '710090c4b15d091696d5369ee18cd3f5',
+        'api_key' : '__api_key__',
         'region'  : '3504',
         'last'    : str(8)
         # 'last'    : 1
