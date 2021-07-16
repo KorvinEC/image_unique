@@ -1,6 +1,6 @@
 # Create your tasks here
 
-from celeryapp import shared_task
+from celery import shared_task
 from .functions import get_updates, create_new_advertisement_threading
 from multiprocessing.dummy import Pool as ThreadPool
 from django.utils import timezone
@@ -25,7 +25,6 @@ def listen_crwl():
             'site': item['source'],
             'added_at': timezone.make_aware(datetime.fromisoformat(item['dt'])),
             'links': item['photo'].split(','),
-            'color': item['color'],
         }
         res = create_new_advertisement_threading(post_adv_data, pool)
         results.append({'unique': res})

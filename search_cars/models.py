@@ -27,7 +27,7 @@ class Advertisement(models.Model):
 
     photos = models.ManyToManyField(to='AdvertisementPhotos',
                                     verbose_name='Ссылки на фотографии')
-    similar_advertisement = models.ManyToManyField(to='self')
+    similar_advertisement = models.ManyToManyField(to='self', blank=True)
 
     def save(self, *args, **kwargs):
         if not self.created_at:

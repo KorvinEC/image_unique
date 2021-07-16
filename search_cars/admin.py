@@ -7,13 +7,13 @@ from .models import *
 @admin.register(Advertisement)
 class AdvertisementAdmin(admin.ModelAdmin):
     list_display = ('id', 'advertisement_id', 'advertisement_url', 'model', 'brand', 'created_at', 'added_at')
-    list_filter = ('model', 'brand', 'created_at', 'added_at')
-    # pass
+    search_fields = ('id', 'advertisement_id')
 
 
 @admin.register(AdvertisementPhotos)
 class AdvertisementPhotosAdmin(admin.ModelAdmin):
-    list_display = ('adv_id', 'photo_url')
+    list_display = ('id', 'adv_id_id', 'adv_id', 'photo_url')
+    search_fields = ('id',)
 
 # admin.site.register(Advertisement)
 # admin.site.register(AdvertisementPhotos)

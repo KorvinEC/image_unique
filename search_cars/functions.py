@@ -11,7 +11,7 @@ import numpy as np
 def get_updates():
     link = 'http://crwl.ru/api/rest/latest/get_new_ads/'
     payload = {
-        'api_key' : '__api_key__',
+        'api_key' : '710090c4b15d091696d5369ee18cd3f5',
         'region'  : '3504',
     }
     result = requests.get(link, params=payload)
@@ -20,7 +20,6 @@ def get_updates():
         return result.json()
     else:
         return {}
-
 
 
 def create_new_advertisement_threading(post_adv_data : dict, pool, logger=None):
@@ -52,14 +51,11 @@ def create_new_advertisement_threading(post_adv_data : dict, pool, logger=None):
     # Находим дупликаты полученного объявления
 
     dup_advs = Advertisement.objects.filter(
-        year=post_adv_data['year']  ,
-        brand=post_adv_data['brand']   ,
-        model=post_adv_data['model'] ,
-        added_at__lt=post_adv_data['added_at'],
+        year=post_adv_data['year'],
+        brand__icontains=post_adv_data['brand'],
+        model__icontains=post_adv_data['model'],
         original=True
     )
-
-    print(dup_advs)
 
     # Загрузка изображений из POST запроса с созданием класса AdvertisementPhotos
 
@@ -72,9 +68,10 @@ def create_new_advertisement_threading(post_adv_data : dict, pool, logger=None):
 
         if logger:
             logger.debug(
-                'Нет подходящих объявлений для {} {}'.format(
+                'Нет подходящих объявлений для {} {} {}'.format(
                     post_adv_data['brand'],
                     post_adv_data['model'],
+                    post_adv_data['year'],
                 )
             )
 
@@ -90,10 +87,11 @@ def create_new_advertisement_threading(post_adv_data : dict, pool, logger=None):
 
         if logger:
             logger.debug(
-                'Найдено {1} {2} объявлений: {0}'.format(
+                'Найдено {1} {2} {3} объявлений: {0}'.format(
                     len(dup_advs),
                     post_adv_data['brand'],
                     post_adv_data['model'],
+                    post_adv_data['year'],
                 )
             )
 
@@ -115,10 +113,11 @@ def create_new_advertisement_threading(post_adv_data : dict, pool, logger=None):
             if dup_adv.original:
                 if logger:
                     logger.debug(
-                        'Проверка объявления {1} {2} фотографий: {0} '.format(
+                        'Проверка объявления {1} {2} {3} фотографий: {0} '.format(
                             len(dup_adv.photos.all()),
                             dup_adv.brand,
                             dup_adv.model,
+                            dup_adv.year,
                         )
                     )
 
@@ -141,7 +140,7 @@ def create_new_advertisement_threading(post_adv_data : dict, pool, logger=None):
                                 'Найдено совпадение для {} {} {}'.format(
                                     dup_adv.brand,
                                     dup_adv.model,
-                                    dup_adv.color
+                                    dup_adv.year
                                 )
                             )
 

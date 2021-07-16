@@ -224,7 +224,7 @@ class CheckUnique(APIView):
         #         False - запись уже существует в базе данных.
 
         post_data = request.POST
-        logger.debug('POST запрос содержит: {}'.format(post_data))
+        # logger.debug('POST запрос содержит: {}'.format(post_data))
 
         post_adv_data = {
             'id': post_data.get('id'),
