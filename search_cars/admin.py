@@ -7,7 +7,7 @@ from .models import *
 @admin.register(Advertisement)
 class AdvertisementAdmin(admin.ModelAdmin):
     list_display = ('id', 'advertisement_id', 'advertisement_url', 'model', 'brand', 'created_at', 'added_at')
-    search_fields = ('id', 'advertisement_id')
+    search_fields = ('id', 'advertisement_id', 'advertisement_url', 'model', 'brand')
 
 
 @admin.register(AdvertisementPhotos)
