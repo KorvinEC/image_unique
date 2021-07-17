@@ -1,6 +1,9 @@
 from django.shortcuts import render
 from django.http import JsonResponse
 from rest_framework.views import APIView
+from django.views.generic.list import ListView
+from django.views.generic.detail import DetailView
+
 import requests
 from .models import Advertisement
 from django.utils import timezone
@@ -10,10 +13,11 @@ import numpy as np
 from multiprocessing.dummy import Pool as ThreadPool
 from datetime import datetime
 from django.core.paginator import Paginator,  EmptyPage, PageNotAnInteger
-from .functions import create_new_advertisement_threading, get_updates
+from .utils import create_new_advertisement_threading, get_updates
 from django.shortcuts import redirect
 from .forms import SearchForm
 from django.http import QueryDict
+from tqdm import tqdm
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -39,7 +43,7 @@ def index(request):
 
     link = 'http://crwl.ru/api/rest/latest/get_ads/'
     payload = {
-        'api_key' : '__api_key__',
+        'api_key' : '710090c4b15d091696d5369ee18cd3f5',
         'region'  : '3504',
         'last'    : '1'
     }
@@ -59,75 +63,97 @@ def index(request):
         return render(request, 'index.html')
 
     result_json = result.json()[::-1]
-    for i in range(len(result_json)):
-        splitted = result_json[i]['photo'].split(',')
-        result_json[i]['photo'] = splitted if len(splitted[0]) != 0 else None
-        result_json[i]['New_car'] = True if i % 8 else False
+    ret = []
 
-    return render(request, 'index.html', {'cars': result_json})
-
-
-def database(request):
-    # Обработчик базы данных
-    # :param request:
-    #     request - запрос к странице
-    # :return:
-    #     Возвращается страница базы данных
-
-    brand = request.GET.get('brand')
-    model = request.GET.get('model')
-    start_date = request.GET.get('start_date')
-    end_date = request.GET.get('end_date')
-    duplicates = request.GET.get('duplicates')
-
-    advertisements = Advertisement.objects.filter(original=True)
-
-    if brand and len(brand) != 0:
-        advertisements = advertisements.filter(
-            brand__contains=brand,
-        )
-    if model and len(model) != 0:
-        advertisements = advertisements.filter(
-            model__contains=model,
-        )
-
-    if start_date:
-        start_date = timezone.make_aware(datetime.strptime(start_date, '%d/%m/%Y'))
-        advertisements = advertisements.filter(
-            created_at__gte=start_date
-        )
-
-    if end_date:
-        end_date = timezone.make_aware(datetime.strptime(end_date, '%d/%m/%Y'))
-        advertisements = advertisements.filter(
-            created_at__lte=end_date
-        )
-
-    if duplicates:
-        advertisements = advertisements.filter(
-            similar_advertisement__isnull=False
-        )
-
-    advertisements = advertisements.order_by('-added_at')
-
-    if advertisements.order_by('-added_at'):
-        paginator = Paginator(advertisements, 12)
-
-        page = request.GET.get('page')
-
-        try:
-            cars = paginator.page(page)
-        except PageNotAnInteger:
-            cars = paginator.page(1)
-        except EmptyPage:
-            cars = paginator.page(paginator.num_pages)
-
-        return render(request, 'database.html', {'cars': cars})
-    else:
-        return render(request, 'database.html', )
+    for item in result_json:
+        print(item)
+        if item['company'] == '0' and item['run'] != '0':
+            item['photo'] = item['photo'].split(',')
+            ret.append(item)
+    return render(request, 'index.html', {'cars': ret})
 
 
-from tqdm import tqdm
+class DatabaseList(ListView):
+    model = Advertisement
+    template_name = 'database.html'
+    context_object_name = 'cars'
+    paginate_by = 12
+
+    def get_queryset(self):
+        brand = self.request.GET.get('brand')
+        model = self.request.GET.get('model')
+        year = self.request.GET.get('year')
+        start_date = self.request.GET.get('start_date')
+        end_date = self.request.GET.get('end_date')
+        duplicates = self.request.GET.get('duplicates')
+        url = self.request.GET.get('url')
+
+        advertisements = Advertisement.objects.filter(original=True)
+
+        if brand and len(brand) != 0:
+            advertisements = advertisements.filter(
+                brand__contains=brand,
+            )
+        if model and len(model) != 0:
+            advertisements = advertisements.filter(
+                model__contains=model,
+            )
+        if start_date:
+            start_date = timezone.make_aware(datetime.strptime(start_date, '%d/%m/%Y'))
+            advertisements = advertisements.filter(
+                created_at__gte=start_date
+            )
+        if end_date:
+            end_date = timezone.make_aware(datetime.strptime(end_date, '%d/%m/%Y'))
+            advertisements = advertisements.filter(
+                created_at__lte=end_date
+            )
+        if duplicates:
+            advertisements = advertisements.filter(
+                similar_advertisement__isnull=False
+            )
+        if url:
+            advertisements = advertisements.filter(
+                advertisement_url=url
+            )
+        if year:
+            advertisements = advertisements.filter(
+                year=year
+            )
+        advertisements = advertisements.order_by('-added_at')
+
+        return advertisements
+
+    def get_context_data(self, *, object_list=None, **kwargs):
+        context = super(DatabaseList, self).get_context_data()
+
+        models = [i[0] for i in
+                  Advertisement.objects.order_by('model').values_list('model').distinct().exclude(model='')]
+        brands = [i[0] for i in
+                  Advertisement.objects.order_by('brand').values_list('brand').distinct().exclude(brand='')]
+
+        models = zip(*[iter(models)] * 4)
+        brands = zip(*[iter(brands)] * 4)
+
+        context['models'] = models
+        context['brands'] = brands
+
+        context['title'] = 'Объявления'
+
+        return context
+
+
+class AdvertisementPost(DetailView):
+    model = Advertisement
+    template_name = 'advertisement.html'
+
+    def get_context_data(self, **kwargs):
+        context = super(AdvertisementPost, self).get_context_data()
+
+        context['title'] = ' '.join([context['object'].brand,
+                                   context['object'].model,
+                                   context['object'].year])
+        return context
 
 
 def test(request):
@@ -163,7 +189,6 @@ def test(request):
     pool.join()
 
     return JsonResponse({'result': True})
-
 
 
 def test_2(request):
