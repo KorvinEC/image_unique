@@ -1,131 +1,130 @@
 {% extends 'base.html' %}
 {% load url_resolve %}
 {% block content %}
-<div class="container pt-4">
-    <div class="row">
-        <div class="col">
-            <div class="card">
-                <div class="card-header">
-                    <ul class="nav nav-tabs card-header-tabs" id="myTab" role="tablist">
-                        <li class="nav-item">
-                          <a class="nav-link active" id="home-tab" data-toggle="tab" href="#home" role="tab" aria-controls="home" aria-selected="true">Объявление</a>
-                        </li>
-                        <li class="nav-item">
-                          <a class="nav-link" id="profile-tab" data-toggle="tab" href="#profile" role="tab" aria-controls="profile" aria-selected="false">Фотографии</a>
-                        </li>
-                    </ul>
-                </div>
-
-                <div class="card-body">
-                    <div class="tab-content" id="myTabContent">
-                        <div class="tab-pane fade show active" id="home" role="tabpanel" aria-labelledby="home-tab">
-                            <div class="row g-0">
-                                <div class="col-md-4">
-                                    <img src="{{ advertisement.photos.all.0.photo_url }}" class="img-fluid rounded-start img-thumbnail" alt="...">
-                                </div>
-                                <div class="col-md-8">
-                                    <div class="card-body">
-                                        <h5 class="card-title">{{ advertisement.brand }} {{ advertisement.model }} {{ advertisement.year }}</h5>
-                                        <p class="card-text">ID объявления: {{ advertisement.advertisement_id }}</p>
-                                        <p class="card-text">{{ advertisement.info }}</p>
-                                        <p class="card-text mb-0">
-                                            <small class="text-muted">Создано: {{ advertisement.created_at }}</small>
-                                        </p>
-                                        <p class="card-text mb-0">
-                                            <small class="text-muted">Добавлено: {{ advertisement.added_at }}</small>
-                                        </p>
-                                        <p class="card-text mb-0">
-                                            <small class="text-muted">
-                                                Сайт: <a href="{{ advertisement.advertisement_url }}">{{ advertisement.site }}</a>
-                                            </small>
-                                        </p>
-                                    </div>
-                                </div>
-                            </div>
+    <div class="fluid-container pt-4">
+        <div class="row d-flex justify-content-between">
+            <div class="col-6 pl-4 pr-1">
+                <div class="col py-3 sticky-top" id="main_content">
+                    <div class="card">
+                        <div class="card-header">
+                            <ul class="nav nav-tabs card-header-tabs" id="myTab" role="tablist">
+                                <li class="nav-item">
+                                  <a class="nav-link active" id="home-tab" data-toggle="tab" href="#home" role="tab" aria-controls="home" aria-selected="true">Объявление</a>
+                                </li>
+                                <li class="nav-item">
+                                  <a class="nav-link" id="profile-tab" data-toggle="tab" href="#profile" role="tab" aria-controls="profile" aria-selected="false">Фотографии</a>
+                                </li>
+                            </ul>
                         </div>
-                        <div class="tab-pane fade" id="profile" role="tabpanel" aria-labelledby="profile-tab">
-                            <div class="card-columns">
-                                {% for photo in advertisement.photos.all %}
-                                    <div class="card">
-                                        <img src="{{ photo.photo_url }}" class="card-img-top" style="width: 100%">
+
+                        <div class="card-body">
+                            <div class="tab-content" id="myTabContent">
+                                <div class="tab-pane fade show active" id="home" role="tabpanel" aria-labelledby="home-tab">
+                                    <div class="row g-0">
+                                        <div class="col-md-4">
+                                            <img src="{{ advertisement.photos.all.0.photo_url }}" class="img-fluid rounded-start img-thumbnail" alt="...">
+                                        </div>
+                                        <div class="col-md-8">
+                                            <div class="card-body">
+                                                <h5 class="card-title">{{ advertisement.brand }} {{ advertisement.model }} {{ advertisement.year }}</h5>
+                                                <p class="card-text">ID объявления: {{ advertisement.advertisement_id }}</p>
+                                              <button class="btn btn-primary" type="button" data-toggle="collapse" data-target="#collapseExample" aria-expanded="false" aria-controls="collapseExample">
+                                                Показать текст
+                                              </button>
+                                                <p class="card-text collapse show" id="collapseExample">{{ advertisement.info }}</p>
+                                                <p class="card-text mb-0">
+                                                    <small class="text-muted">Создано: {{ advertisement.created_at }}</small>
+                                                </p>
+                                                <p class="card-text mb-0">
+                                                    <small class="text-muted">Добавлено: {{ advertisement.added_at }}</small>
+                                                </p>
+                                                <p class="card-text mb-0">
+                                                    <small class="text-muted">
+                                                        Сайт: <a href="{{ advertisement.advertisement_url }}">{{ advertisement.site }}</a>
+                                                    </small>
+                                                </p>
+                                            </div>
+                                        </div>
                                     </div>
-                                {% endfor %}
+                                </div>
+                                <div class="tab-pane fade" id="profile" role="tabpanel" aria-labelledby="profile-tab">
+                                    <div class="card-columns">
+                                        {% for photo in advertisement.photos.all %}
+                                            <div class="card">
+                                                <img src="{{ photo.photo_url }}" class="card-img-top" style="width: 100%">
+                                            </div>
+                                        {% endfor %}
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
+            {% if  advertisement.similar_advertisement.all %}
+                <div class="col-6 pl-2 pr-1">
+                    <div class="row">
+                        <div class="col py-3">
+                            {% for dup in advertisement.similar_advertisement.all %}
+                                <div class="card mb-3">
+                                    <div class="card-header">
+                                        <ul class="nav nav-tabs card-header-tabs" id="myTab" role="tablist">
+                                            <li class="nav-item">
+                                              <a class="nav-link active" id="duplicate_{{ dup.id }}_-tab" data-toggle="tab" href="#duplicate_{{ dup.id }}" role="tab" aria-controls="duplicate_{{ dup.id }}" aria-selected="true">Объявление</a>
+                                            </li>
+                                            <li class="nav-item">
+                                              <a class="nav-link" id="duplicate_photo_{{ dup.id }}_-tab" data-toggle="tab" href="#duplicate_photo_{{ dup.id }}" role="tab" aria-controls="duplicate_photo_{{ dup.id }}" aria-selected="false">Фотографии</a>
+                                            </li>
+                                        </ul>
+                                    </div>
+
+                                    <div class="card-body">
+                                        <div class="tab-content" id="myTabContent">
+                                            <div class="tab-pane fade show active" id="duplicate_{{ dup.id }}" role="tabpanel" aria-labelledby="home-tab">
+                                                <div class="row g-0">
+                                                    <div class="col-md-4">
+                                                        <img src="{{ dup.photos.all.0.photo_url }}" class="img-fluid rounded-start img-thumbnail" alt="...">
+                                                    </div>
+                                                    <div class="col-md-8">
+                                                        <div class="card-body">
+                                                            <h5 class="card-title">{{ dup.brand }} {{ dup.model }} {{ dup.year }}</h5>
+                                                            <p class="card-text">ID объявления: {{ dup.advertisement_id }}</p>
+                                                            <p class="card-text">{{ dup.info }}</p>
+                                                            <p class="card-text mb-0">
+                                                                <small class="text-muted">Создано: {{ dup.created_at }}</small>
+                                                            </p>
+                                                            <p class="card-text mb-0">
+                                                                <small class="text-muted">Добавлено: {{ dup.added_at }}</small>
+                                                            </p>
+                                                            <p class="card-text mb-0">
+                                                                <small class="text-muted">
+                                                                    Сайт: <a href="{{ dup.advertisement_url }}">{{ dup.site }}</a>
+                                                                </small>
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="tab-pane fade" id="duplicate_photo_{{ dup.id }}" role="tabpanel" aria-labelledby="profile-tab">
+                                                <div class="card-columns">
+                                                    {% for photo in dup.photos.all %}
+                                                        <div class="card">
+                                                            <img src="{{ photo.photo_url }}" class="card-img-top">
+                                                        </div>
+                                                    {% endfor %}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
         </div>
     </div>
+    <script>
 
-    {% if  advertisement.similar_advertisement.all %}
-        <div class="row">
-            <div class="col">
-            {% for dup in advertisement.similar_advertisement.all %}
-            <div class="card">
-                <div class="card-header">
-                    <ul class="nav nav-tabs card-header-tabs" id="myTab" role="tablist">
-                        <li class="nav-item">
-                          <a class="nav-link active" id="duplicate_{{ dup.id }}_-tab" data-toggle="tab" href="#duplicate_{{ dup.id }}" role="tab" aria-controls="duplicate_{{ dup.id }}" aria-selected="true">Объявление</a>
-                        </li>
-                        <li class="nav-item">
-                          <a class="nav-link" id="duplicate_photo_{{ dup.id }}_-tab" data-toggle="tab" href="#duplicate_photo_{{ dup.id }}" role="tab" aria-controls="duplicate_photo_{{ dup.id }}" aria-selected="false">Фотографии</a>
-                        </li>
-                    </ul>
-                </div>
-
-                <div class="card-body">
-                    <div class="tab-content" id="myTabContent">
-                        <div class="tab-pane fade show active" id="duplicate_{{ dup.id }}" role="tabpanel" aria-labelledby="home-tab">
-                            <div class="row g-0">
-                                <div class="col-md-4">
-                                    <img src="{{ dup.photos.all.0.photo_url }}" class="img-fluid rounded-start img-thumbnail" alt="...">
-                                </div>
-                                <div class="col-md-8">
-                                    <div class="card-body">
-                                        <h5 class="card-title">{{ dup.brand }} {{ dup.model }} {{ dup.year }}</h5>
-                                        <p class="card-text">ID объявления: {{ dup.advertisement_id }}</p>
-                                        <p class="card-text">{{ dup.info }}</p>
-                                        <p class="card-text mb-0">
-                                            <small class="text-muted">Создано: {{ dup.created_at }}</small>
-                                        </p>
-                                        <p class="card-text mb-0">
-                                            <small class="text-muted">Добавлено: {{ dup.added_at }}</small>
-                                        </p>
-                                        <p class="card-text mb-0">
-                                            <small class="text-muted">
-                                                Сайт: <a href="{{ dup.advertisement_url }}">{{ dup.site }}</a>
-                                            </small>
-                                        </p>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="tab-pane fade" id="duplicate_photo_{{ dup.id }}" role="tabpanel" aria-labelledby="profile-tab">
-                            <div class="card-columns">
-                                {% for photo in dup.photos.all %}
-                                    <div class="card">
-                                        <img src="{{ photo.photo_url }}" class="card-img-top">
-                                    </div>
-                                {% endfor %}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            {% endfor %}
-        </div>
-        </div>
-    {% endif %}
-</div>
-{#                {{ advertisement.advertisement_id }}<br>#}
-{#            {{ advertisement.advertisement_url }}<br>#}
-{#            {{ advertisement.brand }}<br>#}
-{#            {{ advertisement.model }}<br>#}
-{#            {{ advertisement.year }}<br>#}
-{#            {{ advertisement.info }}<br>#}
-{#            {{ advertisement.site }}<br>#}
-{#            {{ advertisement.original }}<br>#}
-{#            {{ advertisement.created_at }}<br>#}
-{#            {{ advertisement.added_at }}<br>#}
+    </script>
 {% endblock %}

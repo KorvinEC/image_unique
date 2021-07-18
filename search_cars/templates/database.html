@@ -101,15 +101,15 @@
                     <p class="card-text mb-0">
                         <small class="text-muted">Добавлено: {{ car.added_at }}</small>
                     </p>
-                    <div class="row justify-content-between">
-                        <div class="col-5">
+                    <div class="row d-flex justify-content-between">
+                        <div class="col-auto">
                             <p class="card-text mb-0">
                                 <small class="text-muted">
                                     Сайт: <a href="{{ dup.advertisement_url }}">{{ car.site }}</a>
                                 </small>
                             </p>
                         </div>
-                        <div class="col-5 ml-auto justify-content-end">
+                        <div class="col-auto ml-auto d-flex align-items-center">
                             {% if car.similar_advertisement.all %}
                                 <span class="badge badge-warning">Дубликатов: {{ car.similar_advertisement.all|length }}</span>
                             {% endif %}
