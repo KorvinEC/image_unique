@@ -1,6 +1,9 @@
 /db.sqlite3
+/1db.sqlite3
+/2db.sqlite3
 /ifsusum8_adcheck.sql
 /sqlite3.exe
 /venv
 /pscp.exe
 /.idea
+/media

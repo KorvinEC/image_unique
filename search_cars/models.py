@@ -2,16 +2,22 @@ from django.db import models
 from django.utils import timezone
 # from .models import *
 
+
 # Create your models here.
 
 
 class AdvertisementPhotos(models.Model):
     adv_id    = models.ForeignKey('Advertisement', on_delete=models.CASCADE, verbose_name="Объявление", db_index=True)
-    photo_url = models.CharField(verbose_name="ссылка на изображение", max_length=200)
+    photo_url = models.CharField(verbose_name="Ссылка на изображение", max_length=200)
+    photo     = models.ImageField(verbose_name='Изображение', null=True)
+    avg_hash  = models.CharField(verbose_name='Изображение', max_length=16, null=True)
+
+    def __str__(self):
+        return '{} {} {} {}'.format(self.adv_id, self.photo_url, self.photo, self.avg_hash)
 
 
 class Advertisement(models.Model):
-    advertisement_id = models.IntegerField(verbose_name="Id объявления", unique=True)
+    advertisement_id = models.IntegerField(verbose_name="Id объявления", unique=True, db_index=True)
     advertisement_url = models.CharField(verbose_name="Ссылка на объявление", max_length=300)
 
     brand = models.CharField(verbose_name="Марка", max_length=50)
@@ -20,7 +26,10 @@ class Advertisement(models.Model):
     color = models.CharField(verbose_name='Цвет автомобиля', max_length=15, blank=True)
     info = models.TextField(verbose_name="Текст объявление")
     site = models.CharField(verbose_name="Сайт объявления", max_length=30)
-    original = models.BooleanField(verbose_name='Оригинальное объявление')
+    latitude = models.CharField(verbose_name='Широта', max_length=20, blank=True)
+    longitude = models.CharField(verbose_name="Долгота", max_length=20, blank=True)
+
+    original = models.BooleanField(verbose_name='Оригинальное объявление', null=True)
 
     created_at = models.DateTimeField(verbose_name="Дата добавления в базу", db_index=True)
     added_at = models.DateTimeField(verbose_name="Дата появления объявления", blank=True)
@@ -35,5 +44,5 @@ class Advertisement(models.Model):
         return super(Advertisement, self).save(*args, **kwargs)
 
     def __str__(self):
-        return '{} {} {}'.format(self.advertisement_id, self.brand, self.model)
+        return '{} {} {} {}'.format(self.advertisement_id, self.brand, self.model, self.year)
 

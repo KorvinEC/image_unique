@@ -5,7 +5,18 @@ import PIL
 import io
 import cv2
 import requests
-import numpy as np
+import aiohttp
+import asyncio
+import time
+from django.core.files.storage import FileSystemStorage
+from django.core.files.base import ContentFile
+import imagehash
+from PIL import Image, ImageFile
+ImageFile.LOAD_TRUNCATED_IMAGES = True
+from tqdm import tqdm
+
+
+asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
 
 def get_updates():
@@ -22,31 +33,200 @@ def get_updates():
         return {}
 
 
-def create_new_advertisement_threading(post_adv_data : dict, pool, logger=None):
+def save_adv_and_photos(adv, photos, orig):
+    adv.original = orig
+    for post_image in photos:
+        post_image.adv_id = adv
+        post_image.save()
+    adv.photos.add(*photos)
+    adv.save()
+    return orig
+
+
+def create_hash_and_photo(photo):
+    link = photo.photo_url
+
+    response = requests.get(link, timeout=10)
+
+    file = ContentFile(response.content)
+    photo.avg_hash = str(imagehash.average_hash(Image.open(file)))
+
+    fs = FileSystemStorage()
+    name = '_'.join(
+        map(str, [photo.adv_id.id,
+                  photo.avg_hash])) + '.' + response.headers['Content-Type'].split('/')[1]
+    file = fs.save(name=name, content=file)
+
+    photo.photo = file
+    photo.save()
+
+
+def create_adv_photos(links, adv):
+    photos = []
+
+    links_len = len(links)
+
+    if links_len == 1:
+        if not links[0]:
+            return photos
+
+    with tqdm(total=links_len, position=0, leave=True) as bar:
+        for link in links:
+            new_photo = AdvertisementPhotos()
+
+            new_photo.adv_id = adv
+            new_photo.photo_url = link
+
+            create_hash_and_photo(new_photo)
+
+            photos.append(new_photo)
+
+            bar.update()
+
+    return photos
+
+
+async def async_download_and_save(session, url, adv):
+    async with session.get(url) as response:
+        photo = AdvertisementPhotos()
+
+        photo.adv_id = adv
+        photo.photo_url = url
+
+        content = await response.read()
+        headers = response.headers['Content-Type']
+
+        file = ContentFile(content)
+        photo.avg_hash = str(imagehash.average_hash(Image.open(file)))
+
+        fs = FileSystemStorage()
+        name = '_'.join(
+            map(str, [photo.adv_id.id,
+                      photo.avg_hash])) + '.' + headers
+        file = fs.save(name=name, content=file)
+
+        photo.photo = file
+
+        return photo
+
+
+def get_or_create_eventloop():
+    try:
+        return asyncio.get_event_loop()
+    except RuntimeError as ex:
+        if "There is no current event loop in thread" in str(ex):
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            return asyncio.get_event_loop()
+
+
+async def async_download(links, adv):
+    async with aiohttp.ClientSession() as session:
+
+        tasks = []
+        for link in links:
+            tasks.append(asyncio.ensure_future(async_download_and_save(session, link, adv)))
+
+        results = await asyncio.gather(*tasks)
+
+        return results
+
+
+def async_create_adv_photos(links, adv):
+    photos = []
+
+    links_len = len(links)
+
+    if links_len == 1:
+        if not links[0]:
+            return photos
+
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    future = asyncio.ensure_future(async_download(links, adv))
+    photos = loop.run_until_complete(future)
+
+    for photo in photos:
+        photo.save()
+
+    return photos
+
+
+def orb_match_template(photo_1, photo_2):
+    image_1 = cv2.imread(photo_1.photo.path)
+    image_2 = cv2.imread(photo_2.photo.path)
+
+    orb = cv2.ORB_create()
+
+    keypoints1, descriptors1 = orb.detectAndCompute(image_1, None)
+    keypoints2, descriptors2 = orb.detectAndCompute(image_2, None)
+
+    bf = cv2.BFMatcher(cv2.NORM_HAMMING)
+    matches = bf.knnMatch(descriptors1, descriptors2, k=2)
+    good_matches = []
+
+    for m1, m2 in matches:
+        if m1.distance < 0.89 * m2.distance:
+            good_matches.append([m1])
+
+    if len(keypoints1) >= len(keypoints2):
+        number_keypoints = len(keypoints1)
+    else:
+        number_keypoints = len(keypoints2)
+
+    percentage_similarity = float(len(good_matches)) / number_keypoints * 100
+
+    if percentage_similarity > 50.:
+        return True
+    return False
+
+
+def hash_orb_match_template(photo_1, photo_2):
+    hash_1 = imagehash.hex_to_hash(photo_1.avg_hash)
+    hash_2 = imagehash.hex_to_hash(photo_2.avg_hash)
+
+    res_hash = hash_1 - hash_2
+
+    if res_hash <= 5:
+        return True
+    elif 5 < res_hash <= 20:
+        return orb_match_template(photo_1, photo_2)
+    else:
+        return False
+
+
+def create_new_advertisement_threading(post_adv_data: dict, pool, logger=None):
 
     # Создаем объект объявления
 
     if Advertisement.objects.filter(advertisement_id=post_adv_data['id']).exists():
         adv = Advertisement.objects.get(advertisement_id=post_adv_data['id'])
         logger.debug(
-            'Объявление {} {} {} уже существует'.format(
+            '{} {} {} {} Объявление уже существует'.format(
                 post_adv_data['id'],
                 post_adv_data['brand'],
                 post_adv_data['model'],
+                post_adv_data['year']
             )
         )
         return adv.original
 
     new_adv = Advertisement()
 
-    new_adv.advertisement_id   = post_adv_data['id']
-    new_adv.advertisement_url  = post_adv_data['url']
-    new_adv.brand              = post_adv_data['brand']
-    new_adv.model              = post_adv_data['model']
-    new_adv.year               = post_adv_data['year']
-    new_adv.info               = post_adv_data['text']
-    new_adv.site               = post_adv_data['site']
-    new_adv.added_at           = post_adv_data['added_at']
+    new_adv.advertisement_id  = post_adv_data['id']
+    new_adv.advertisement_url = post_adv_data['url']
+    new_adv.brand             = post_adv_data['brand']
+    new_adv.model             = post_adv_data['model']
+    new_adv.year              = post_adv_data['year']
+    new_adv.info              = post_adv_data['text']
+    new_adv.site              = post_adv_data['site']
+    new_adv.added_at          = post_adv_data['added_at']
+
+    if ('latitude' and 'longitude') in post_adv_data.keys():
+        new_adv.latitude      = post_adv_data['latitude']
+        new_adv.longitude     = post_adv_data['longitude']
+
+    new_adv.save()
 
     # Находим дупликаты полученного объявления
 
@@ -54,12 +234,22 @@ def create_new_advertisement_threading(post_adv_data : dict, pool, logger=None):
         year=post_adv_data['year'],
         brand__icontains=post_adv_data['brand'],
         model__icontains=post_adv_data['model'],
-        original=True
+        original=True,
+        added_at__lte=post_adv_data['added_at'],
     )
 
     # Загрузка изображений из POST запроса с созданием класса AdvertisementPhotos
 
-    post_images = create_adv_photos(post_adv_data['links'])
+    logger.debug(
+        '{} Загрузка фотографий {}'.format(
+            new_adv,
+            len(post_adv_data['links'])
+        )
+    )
+
+    # post_images_photos = create_adv_photos(post_adv_data['links'], new_adv)
+    post_images = async_create_adv_photos(post_adv_data['links'], new_adv)
+
 
     # Проверяем объявления
 
@@ -68,101 +258,81 @@ def create_new_advertisement_threading(post_adv_data : dict, pool, logger=None):
 
         if logger:
             logger.debug(
-                'Нет подходящих объявлений для {} {} {}'.format(
-                    post_adv_data['brand'],
-                    post_adv_data['model'],
-                    post_adv_data['year'],
+                '{} Нет подходящих объявлений'.format(
+                    new_adv
                 )
             )
 
-        new_adv.original = True
-        new_adv.save()
-        for post_image in post_images:
-            post_image.adv_id = new_adv
-            post_image.save()
-        new_adv.photos.add(*post_images)
-        return True
+        return save_adv_and_photos(new_adv, post_images, True)
     else:
         # Проверка найденных дупликатов
 
         if logger:
             logger.debug(
-                'Найдено {1} {2} {3} объявлений: {0}'.format(
+                '{} Найдено объявлений: {}'.format(
+                    new_adv,
                     len(dup_advs),
-                    post_adv_data['brand'],
-                    post_adv_data['model'],
-                    post_adv_data['year'],
                 )
             )
 
-        # pool = ThreadPool()
-
-        # Загрузка изображения для дальнейшего сравнения
-
-        downloaded_images = []
-
-        for post_image in post_images:
-            response = requests.get(post_image.photo_url, timeout=10)
-            img2 = np.frombuffer(response.content, np.uint8)
-            img2 = cv2.imdecode(img2, cv2.IMREAD_GRAYSCALE)
-            downloaded_images.append(img2)
-
-        # Проверка
+        # Подготавливаем изображения
 
         for dup_adv in dup_advs:
             if dup_adv.original:
                 if logger:
                     logger.debug(
-                        'Проверка объявления {1} {2} {3} фотографий: {0} '.format(
+                        '{} Проверка объявления, фотографий: {} '.format(
+                            dup_adv,
                             len(dup_adv.photos.all()),
-                            dup_adv.brand,
-                            dup_adv.model,
-                            dup_adv.year,
                         )
                     )
 
-                adv_downloaded_images = []
-                for dup_image in dup_adv.photos.all():
-                    response = requests.get(dup_image.photo_url, timeout=10)
-                    img1 = np.frombuffer(response.content, np.uint8)
-                    img1 = cv2.imdecode(img1, cv2.IMREAD_GRAYSCALE)
+                dup_images_photos = []
 
-                    adv_downloaded_images.append(img1)
+                # bar = tqdm(
+                #         total=len(dup_adv.photos.all()),
+                #         position=0,
+                #         leave=True,
+                # )
+                # bar.set_description("Загрузка фотографий", refresh=True)
 
-                all_args = product(adv_downloaded_images, downloaded_images)
+                for photo in dup_adv.photos.all():
+                    if not photo.photo:
+                        create_hash_and_photo(photo)
+                    dup_images_photos.append(
+                        photo
+                    )
+                    # bar.update()
+
+                all_args = product(post_images, dup_images_photos)
 
                 for args in chunks(all_args, 4):
-                    results = pool.starmap(orb_match_template, args)
+
+                    results = pool.starmap(hash_orb_match_template, args)
 
                     if True in results:
                         if logger:
                             logger.debug(
-                                'Найдено совпадение для {} {} {}'.format(
-                                    dup_adv.brand,
-                                    dup_adv.model,
-                                    dup_adv.year
+                                '{} Найдено совпадение'.format(
+                                    dup_adv,
                                 )
                             )
 
-                        new_adv.original = False
-                        new_adv.save()
-                        for post_image in post_images:
-                            post_image.adv_id = new_adv
-                            post_image.save()
-                        new_adv.photos.add(*post_images)
+                        res = save_adv_and_photos(new_adv, post_images, False)
+
                         dup_adv.similar_advertisement.add(new_adv)
                         dup_adv.save()
 
-                        return False
+                        return res
 
-        new_adv.original = True
-        new_adv.save()
-        for post_image in post_images:
-            post_image.adv_id = new_adv
-            post_image.save()
-        new_adv.photos.add(*post_images)
+        if logger:
+            logger.debug(
+                '{} Нет подходящих объявлений'.format(
+                    new_adv
+                )
+            )
 
-        return True
+        return save_adv_and_photos(new_adv, post_images, True)
 
 
 def chunks(iterable, size):
@@ -294,164 +464,6 @@ def insert_sites_into_advs(request):
     else:
         cursor.close()
         db.close()
-
-
-def create_new_advertisement(post_adv_data : dict, logger):
-
-    # Создаем объект объявления
-
-    if Advertisement.objects.filter(advertisement_id=post_adv_data['id']).exists():
-        adv = Advertisement.objects.get(advertisement_id=post_adv_data['id'])
-        logger.debug(
-            'Объявление {} {} {} уже существует'.format(
-                post_adv_data['id'],
-                post_adv_data['brand'],
-                post_adv_data['model']
-            )
-        )
-        return adv.original
-
-    new_adv = Advertisement()
-
-    new_adv.advertisement_id   = post_adv_data['id']
-    new_adv.advertisement_url  = post_adv_data['url']
-    new_adv.brand              = post_adv_data['brand']
-    new_adv.model              = post_adv_data['model']
-    new_adv.year               = post_adv_data['year']
-    new_adv.info               = post_adv_data['text']
-    new_adv.site               = post_adv_data['site']
-    new_adv.added_at           = post_adv_data['added_at']
-
-    # Находим дупликаты полученного объявления
-
-    dup_advs = Advertisement.objects.filter(
-        year=post_adv_data['year']  ,
-        brand=post_adv_data['brand']   ,
-        model=post_adv_data['model'] ,
-        created_at__lt=post_adv_data['added_at'],
-        original=True
-    )
-
-    # Загрузка изображений из POST запроса с созданием класса AdvertisementPhotos
-
-    post_images = create_adv_photos(post_adv_data['links'])
-
-    # Проверяем объявления
-
-    if not dup_advs:
-        # Если не найдено подходящих объявлений, то возвращается значение unique : True
-
-        logger.debug('Нет подходящих объявлений')
-
-        new_adv.original = True
-        new_adv.save()
-        for post_image in post_images:
-            post_image.adv_id = new_adv
-            post_image.save()
-        new_adv.photos.add(*post_images)
-        return True
-    else:
-        # Проверка найденных дупликатов
-
-        logger.debug(
-            'Найдено подходящих объявлений: {} {} {}'.format(
-                len(dup_advs),
-                post_adv_data['brand'],
-                post_adv_data['model'])
-        )
-
-        # pool = ThreadPool(4)
-
-        # Загрузка изображения для дальнейшего сравнения
-
-        downloaded_images = []
-
-        for post_image in post_images:
-            response = requests.get(post_image.photo_url, timeout=10)
-            img2 = np.frombuffer(response.content, np.uint8)
-            img2 = cv2.imdecode(img2, cv2.IMREAD_GRAYSCALE)
-            downloaded_images.append(img2)
-
-        # Проверка
-
-        for dup_adv in dup_advs:
-            if dup_adv.original:
-                logger.debug('Проверка фотографий: {}'.format(len(dup_adv.photos.all())))
-
-                for dup_image in dup_adv.photos.all():
-                    response = requests.get(dup_image.photo_url, timeout=10)
-                    img1 = np.frombuffer(response.content, np.uint8)
-                    img1 = cv2.imdecode(img1, cv2.IMREAD_GRAYSCALE)
-
-                    for downloaded_image in downloaded_images:
-
-                        res, pers, matches = orb_match_template(img1, downloaded_image)
-
-                        if res:
-
-                            new_adv.original = False
-                            new_adv.save()
-                            for post_image in post_images:
-                                post_image.adv_id = new_adv
-                                post_image.save()
-                            new_adv.photos.add(*post_images)
-                            dup_adv.similar_advertisement.add(new_adv)
-                            dup_adv.save()
-
-                            return False
-
-        new_adv.original = True
-        new_adv.save()
-        for post_image in post_images:
-            post_image.adv_id = new_adv
-            post_image.save()
-        new_adv.photos.add(*post_images)
-
-        return True
-
-
-def orb_match_template(image_1, image_2):
-    orb = cv2.ORB_create()
-    keypoints1, descriptors1 = orb.detectAndCompute(image_1, None)
-    keypoints2, descriptors2 = orb.detectAndCompute(image_2, None)
-
-    bf = cv2.BFMatcher(cv2.NORM_HAMMING)
-    matches = bf.knnMatch(descriptors1, descriptors2, k=2)
-    good_matches = []
-
-    for m1, m2 in matches:
-        if m1.distance < 0.89 * m2.distance:
-            good_matches.append([m1])
-
-    if len(keypoints1) >= len(keypoints2):
-        number_keypoints = len(keypoints1)
-    else:
-        number_keypoints = len(keypoints2)
-
-    percentage_similarity = float(len(good_matches)) / number_keypoints * 100
-
-    # logger.debug("Рeзультат сравнения: {:0.1f} {}".format(percentage_similarity, len(good_matches)))
-
-    if percentage_similarity > 50.:
-        return True
-    return False
-
-        # return True, percentage_similarity, len(good_matches)
-    # return False, percentage_similarity, len(good_matches)
-
-
-def create_adv_photos(links):
-    photos = []
-
-    for link in links:
-        if link:
-            new_photo = AdvertisementPhotos()
-
-            new_photo.photo_url = link
-
-            photos.append(new_photo)
-
-    return photos
 
 
 def get_image_in_IO(link):

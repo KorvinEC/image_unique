@@ -5,7 +5,7 @@ from django.views.generic.list import ListView
 from django.views.generic.detail import DetailView
 
 import requests
-from .models import Advertisement
+from .models import Advertisement, AdvertisementPhotos
 from django.utils import timezone
 import logging
 import numpy as np
@@ -47,20 +47,8 @@ def index(request):
         'region'  : '3504',
         'last'    : '1'
     }
-    try:
-        result = requests.get(link, params=payload, timeout=10)
-    except requests.exceptions.ReadTimeout as ex:
-        logger.warning('Read timeout error: {}'.format(ex))
-        return render(request, 'index.html')
-    except requests.exceptions.ConnectTimeout as ex:
-        logger.warning('Connection timeout error: {}'.format(ex))
-        return render(request, 'index.html')
-    except requests.exceptions.ConnectionError as ex:
-        logger.warning('Connection error: {}'.format(ex))
-        return render(request, 'index.html')
-    if result.status_code != 200:
-        logger.warning('Response: {}'.format(result.status_code))
-        return render(request, 'index.html')
+
+    result = requests.get(link, params=payload, timeout=10)
 
     result_json = result.json()[::-1]
     ret = []
@@ -87,6 +75,7 @@ class DatabaseList(ListView):
         end_date = self.request.GET.get('end_date')
         duplicates = self.request.GET.get('duplicates')
         url = self.request.GET.get('url')
+        sort_by = self.request.GET.get('sort_by')
 
         advertisements = Advertisement.objects.filter(original=True)
 
@@ -120,7 +109,10 @@ class DatabaseList(ListView):
             advertisements = advertisements.filter(
                 year=year
             )
-        advertisements = advertisements.order_by('-added_at')
+        if sort_by == 'created':
+            advertisements = advertisements.order_by('-created_at')
+        else:
+            advertisements = advertisements.order_by('-added_at')
 
         return advertisements
 
@@ -150,27 +142,31 @@ class AdvertisementPost(DetailView):
     def get_context_data(self, **kwargs):
         context = super(AdvertisementPost, self).get_context_data()
 
-        context['title'] = ' '.join([context['object'].brand,
-                                   context['object'].model,
-                                   context['object'].year])
+        context['title'] = ' '.join([
+            context['object'].brand,
+            context['object'].model,
+            context['object'].year
+        ])
+
         return context
 
 
 def test(request):
     link = 'http://crwl.ru/api/rest/latest/get_ads/'
     payload = {
-        'api_key' : '__api_key__',
+        'api_key' : '710090c4b15d091696d5369ee18cd3f5',
         'region'  : '3504',
-        'last'    : str(8)
+        'last'    : str(1),
         # 'last'    : 1
     }
     result = requests.get(link, params=payload)
-
     json_result = result.json()
+
+    print(json_result[0])
 
     pool = ThreadPool()
 
-    for item in tqdm(json_result):
+    for item in json_result:
         post_adv_data = {
             'id':       item['Id'],
             'url':      item['url'],
@@ -182,7 +178,10 @@ def test(request):
             'added_at': timezone.make_aware(datetime.fromisoformat(item['dt'])),
             'links':    item['photo'].split(','),
             'color':    item['color'],
+            'latitude':    item['latitude'],
+            'longitude':    item['longitude'],
         }
+
         create_new_advertisement_threading(post_adv_data, pool, logger)
 
     pool.close()
@@ -191,27 +190,41 @@ def test(request):
     return JsonResponse({'result': True})
 
 
+import asyncio
+
+
 def test_2(request):
+    # photos = AdvertisementPhotos.objects.filter(photo=1)
+    # for photo in tqdm(photos):
+    #     photo.photo = None
+    #     photo.avg_hash = None
+    #     photo.save()
     res = get_updates()
     pool = ThreadPool()
 
     result = []
 
     for item in res:
-        post_adv_data = {
-            'id': item['Id'],
-            'url': item['url'],
-            'brand': item['marka'],
-            'model': item['model'],
-            'year': item['year'],
-            'text': item['info'],
-            'site': item['source'],
-            'added_at': timezone.make_aware(datetime.fromisoformat(item['dt'])),
-            'links': item['photo'].split(','),
-            'color': item['color'],
-        }
-        res = create_new_advertisement_threading(post_adv_data, pool, logger)
-        result.append({'unique': res})
+        if item:
+            post_adv_data = {
+                'id': item['Id'],
+                'url': item['url'],
+                'brand': item['marka'],
+                'model': item['model'],
+                'year': item['year'],
+                'text': item['info'],
+                'site': item['source'],
+                'added_at': timezone.make_aware(datetime.fromisoformat(item['dt'])),
+                'links': item['photo'].split(','),
+                'color': item['color'],
+                'latitude': item['latitude'],
+                'longitude': item['longitude'],
+            }
+            res = create_new_advertisement_threading(
+                post_adv_data=post_adv_data,
+                pool=pool,
+                logger=logger)
+            result.append({'unique': res})
 
     pool.close()
     pool.join()
@@ -219,22 +232,22 @@ def test_2(request):
     return JsonResponse({'result': result})
 
 
-def test_request():
+def test_request(request):
     form_data = {
-        'id'       : (None, 104171436 + 24341),
+        'id'       : (None, 104171436),
         'brand'    : (None, 'Toyota'),
         'model'    : (None, 'Camry'),
         'year'     : (None, '2019'),
-        'text'     : (None, 'Тойота  Камри ,2019г сентябрь,на гарантии до 2022 г август месяц,пробег 28т.км,состояние новой машины,без ДТП вся в родной краске 100%,обслуживание у ОФ,куплена за наличный расчёт, физ лицо, комплектация предмаксимальная,машина маркирована,сигнализация с автозапуском, противоугоная система, GPS маяк,резина новая ,все комплекты брелков,зимняя резина,.'),
+        'adv_text' : (None, 'Тойота  Камри ,2019г сентябрь,на гарантии до 2022 г август месяц,пробег 28т.км,состояние новой машины,без ДТП вся в родной краске 100%,обслуживание у ОФ,куплена за наличный расчёт, физ лицо, комплектация предмаксимальная,машина маркирована,сигнализация с автозапуском, противоугоная система, GPS маяк,резина новая ,все комплекты брелков,зимняя резина,.'),
         'adv_link' : (None, 'http://www.avito.ru/chelyabinsk/avtomobili/toyota_camry_2019_2164110309'),
         'photos'   : (None, 'http://59.img.avito.st/640x480/11163333959.jpg,http://76.img.avito.st/640x480/11257975576.jpg,https://i.imgur.com/ibhsQMo.jpeg'),
         'site'     : (None, 'avitoru'),
-        'color'     : (None, 'черный'),
-        # 'added_at' : (None, timezone.now().timestamp()),
+        'date'     : (None, '2021-07-20 11:12:57'),
     }
 
-    result = requests.post('http://127.0.0.1:8000/CheckUnique', files=form_data)
-    return result.json()
+    result = requests.post('http://127.0.0.1:8000/check_unique', files=form_data)
+    # print(result.text)
+    return JsonResponse(result.json())
 
 
 class CheckUnique(APIView):
@@ -249,7 +262,6 @@ class CheckUnique(APIView):
         #         False - запись уже существует в базе данных.
 
         post_data = request.POST
-        # logger.debug('POST запрос содержит: {}'.format(post_data))
 
         post_adv_data = {
             'id': post_data.get('id'),
@@ -267,17 +279,12 @@ class CheckUnique(APIView):
 
         pool = ThreadPool()
 
-        if Advertisement.objects.filter(advertisement_id=post_adv_data['id']).exists():
-            adv = Advertisement.objects.get(advertisement_id=post_adv_data['id'])
-            logger.debug('Объявление {} уже существует'.format(post_adv_data['id']))
-            return JsonResponse({'unique': adv.original})
-        else:
-            result = create_new_advertisement_threading(post_adv_data, pool, logger)
+        result = create_new_advertisement_threading(post_adv_data, pool, logger)
 
-            pool.close()
-            pool.join()
+        pool.close()
+        pool.join()
 
-            return JsonResponse({'unique': result})
+        return JsonResponse({'unique': result})
 
 
 

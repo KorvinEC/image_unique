@@ -1,9 +1,9 @@
 {% extends 'base.html' %}
 {% load url_resolve %}
 {% block content %}
-    <div class="fluid-container pt-4">
-        <div class="row d-flex justify-content-between">
-            <div class="col-6 pl-4 pr-1">
+    <div class="fluid-container pt-4 py-2">
+        <div class="row justify-content-center mx-0">
+            <div class="col-6 px-0">
                 <div class="col py-3 sticky-top" id="main_content">
                     <div class="card">
                         <div class="card-header">
@@ -20,18 +20,24 @@
                         <div class="card-body">
                             <div class="tab-content" id="myTabContent">
                                 <div class="tab-pane fade show active" id="home" role="tabpanel" aria-labelledby="home-tab">
-                                    <div class="row g-0">
+                                    <div class="row g-0 mx-0">
                                         <div class="col-md-4">
                                             <img src="{{ advertisement.photos.all.0.photo_url }}" class="img-fluid rounded-start img-thumbnail" alt="...">
                                         </div>
                                         <div class="col-md-8">
                                             <div class="card-body">
                                                 <h5 class="card-title">{{ advertisement.brand }} {{ advertisement.model }} {{ advertisement.year }}</h5>
-                                                <p class="card-text">ID объявления: {{ advertisement.advertisement_id }}</p>
-                                              <button class="btn btn-primary" type="button" data-toggle="collapse" data-target="#collapseExample" aria-expanded="false" aria-controls="collapseExample">
-                                                Показать текст
-                                              </button>
-                                                <p class="card-text collapse show" id="collapseExample">{{ advertisement.info }}</p>
+                                                <div class="row" style="margin-bottom: 12px">
+                                                    <div class="col">
+                                                        <p class="card-text">ID объявления: {{ advertisement.advertisement_id }}</p>
+                                                    </div>
+                                                    <div class="col d-flex justify-content-end">
+                                                        <button class="btn badge badge-secondary" type="button" data-toggle="collapse" data-target="#adv_text_{{ advertisement.id }}" aria-expanded="false" aria-controls="collapseExample">
+                                                            Показать текст
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                                <p class="card-text collapse show" id="adv_text_{{ advertisement.id }}">{{ advertisement.info }}</p>
                                                 <p class="card-text mb-0">
                                                     <small class="text-muted">Создано: {{ advertisement.created_at }}</small>
                                                 </p>
@@ -62,9 +68,9 @@
                 </div>
             </div>
             {% if  advertisement.similar_advertisement.all %}
-                <div class="col-6 pl-2 pr-1">
-                    <div class="row">
-                        <div class="col py-3">
+                <div class="col-6 px-0">
+                    <div class="row mx-0">
+                        <div class="col py-3 pl-3">
                             {% for dup in advertisement.similar_advertisement.all %}
                                 <div class="card mb-3">
                                     <div class="card-header">
@@ -88,8 +94,17 @@
                                                     <div class="col-md-8">
                                                         <div class="card-body">
                                                             <h5 class="card-title">{{ dup.brand }} {{ dup.model }} {{ dup.year }}</h5>
-                                                            <p class="card-text">ID объявления: {{ dup.advertisement_id }}</p>
-                                                            <p class="card-text">{{ dup.info }}</p>
+                                                            <div class="row" style="margin-bottom: 12px">
+                                                                <div class="col">
+                                                                    <p class="card-text">ID объявления: {{ dup.advertisement_id }}</p>
+                                                                </div>
+                                                                <div class="col d-flex justify-content-end">
+                                                                    <button class="btn badge badge-secondary" type="button" data-toggle="collapse" data-target="#adv_text_{{ dup.id }}" aria-expanded="false" aria-controls="collapseExample">
+                                                                        Показать текст
+                                                                    </button>
+                                                                </div>
+                                                            </div>
+                                                            <p class="card-text collapse show" id="adv_text_{{ dup.id }}">{{ dup.info }}</p>
                                                             <p class="card-text mb-0">
                                                                 <small class="text-muted">Создано: {{ dup.created_at }}</small>
                                                             </p>
@@ -124,7 +139,4 @@
             {% endif %}
         </div>
     </div>
-    <script>
-
-    </script>
 {% endblock %}

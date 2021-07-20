@@ -50,35 +50,41 @@
                             </div>
                         </div>
                     </div>
-                    <div class="col-xl-1 col-md-4" align-self-end><input class="form-control" value="{{ request.GET.year }}" type="text" placeholder="Год" name="year"></div>
+                    <div class="col-xl-1 col-md-4" align-self-end>
+                        <input class="form-control" value="{{ request.GET.year }}" type="text" placeholder="Год" name="year">
+                    </div>
                 </div>
                 <div class="row form-group">
                     <div class="col-md-6 pb-2">
                         <input class="form-control" value="{{ request.GET.url }}" type="text" placeholder="URL объявления" name="url">
                     </div>
-                    <div class="col"></div>
-{#                    <div class="col-md-2 pb-2 align-items-center">#}
-{#                        <div class="form-check mb-2">#}
-{#                            {% if request.GET.duplicates == 'on' %}#}
-{#                                <input type="checkbox"  id="form-check-input" name="duplicates" checked>#}
-{#                            {% else %}#}
-{#                                <input type="checkbox" id="form-check-input" name="duplicates">#}
-{#                            {% endif %}#}
-{#                            <label class="form-check-label align-items-center" for="form-check-input">Дубликаты</label>#}
-{#                        </div>#}
-{#                    </div>#}
-                    <div class="col-md-2 pb-2">
-                        <div class="btn-group-toggle flex" data-toggle="buttons">
-                            {% if request.GET.duplicates == 'on' %}
-                            <label class="btn btn-outline-secondary active">
-                            {% else %}
-                            <label class="btn btn-outline-secondary">
-                            {% endif %}
-                                <input type="checkbox" checked autocomplete="off" name="duplicates"> Дубликаты
-                            </label>
+                    <div class="col">
+                        <div class="form-group">
+                            <select class="form-control" id="exampleFormControlSelect1" name="sort_by">
+                                {% if request.GET.sort_by == 'created' %}
+                                    <option value='created' selected>Сортировать по дате создания</option>
+                                    <option value='added'>Сортировать по дате добавления</option>
+                                {% else %}
+                                    <option value='created'>Сортировать по дате создания</option>
+                                    <option value='added' selected>Сортировать по дате добавления</option>
+                                {% endif %}
+                            </select>
                         </div>
                     </div>
-{#                    <div class="col"></div>#}
+                    <div class="col-md-2 pb-2">
+                        <div class="btn-group-toggle" data-toggle="buttons">
+                            {% if request.GET.duplicates == 'on' %}
+                            <label class="btn btn-outline-secondary active">
+                                <input type="checkbox" checked autocomplete="off" name="duplicates"> Дубликаты
+                            </label>
+                            {% else %}
+                            <label class="btn btn-outline-secondary">
+                                <input type="checkbox" autocomplete="off" name="duplicates"> Дубликаты
+                            </label>
+                            {% endif %}
+
+                        </div>
+                    </div>
                     <div class="col-md-2">
                         <button class="btn btn-light btn-outline-secondary form-control"  type="submit">Поиск</button>
                     </div>
@@ -105,7 +111,7 @@
                         <div class="col-auto">
                             <p class="card-text mb-0">
                                 <small class="text-muted">
-                                    Сайт: <a href="{{ dup.advertisement_url }}">{{ car.site }}</a>
+                                    Сайт: <a href="{{ car.advertisement_url }}">{{ car.site }}</a>
                                 </small>
                             </p>
                         </div>
@@ -183,170 +189,3 @@
         }
     </script>
 {% endblock %}
-
-{#    <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-xl-4 pt-4">#}
-{#    {% for car in cars %}#}
-{#        <div class="col dark" style="padding-bottom: 24px" >#}
-{#            <div class="card">#}
-{#                <div class="card-top">#}
-{#                {% if car.photos.all|length == 0 %}#}
-{#                    <img src="https://yugcleaning.ru/wp-content/themes/consultix/images/no-image-found-360x250.png" class="d-block w-100" style="object-fit: cover">#}
-{#                {% elif car.photos.all|length == 1 %}#}
-{#                    <div id="_{{ car.id }}" class="carousel slide"  data-bs-ride="carousel">#}
-{#                        <div class="carousel-inner" style="height: 200px;">#}
-{#                            <img src="{{ car.photos.all.first.photo_url }}" class="d-block w-100" style="object-fit: cover">#}
-{#                        </div>#}
-{#                    </div>#}
-{#                {% else %}#}
-{#                    <div id="_{{ car.id }}" class="carousel slide"  data-bs-ride="carousel">#}
-{#                    <div class="carousel-inner" style="height: 200px;">#}
-{##}
-{#                    {% for image in car.photos.all %}#}
-{#                        {% if image == car.photos.all|first %}#}
-{#                            <div class="carousel-item active">#}
-{#                        {% else %}#}
-{#                            <div class="carousel-item">#}
-{#                        {% endif %}#}
-{##}
-{#                    <img src="{{ image.photo_url }}" class="img-responsive" style="height: 100%; width: 100%; object-fit: fill">#}
-{#                </div>#}
-{#                {% endfor %}#}
-{#                </div>#}
-{#                    <button class="carousel-control-prev" type="button" data-bs-target="#_{{ car.id }}" data-bs-slide="prev">#}
-{#                        <span class="carousel-control-prev-icon" aria-hidden="true"></span>#}
-{#                        <span class="visually-hidden">Previous</span>#}
-{#                    </button>#}
-{##}
-{#                    <button class="carousel-control-next" type="button" data-bs-target="#_{{ car.id }}" data-bs-slide="next">#}
-{#                        <span class="carousel-control-next-icon" aria-hidden="true"></span>#}
-{#                        <span class="visually-hidden">Next</span>#}
-{#                    </button>#}
-{##}
-{#                    </div>#}
-{#                    {% endif %}#}
-{#                </div>#}
-{##}
-{#                <div class="card-body">#}
-{#                    <h5 class="card-title">Бренд: {{ car.brand }}</h5>#}
-{#                    <h5>Модель: {{ car.model }}</h5>#}
-{#                    <p class="clearfix">Год: {{ car.year }}</p>#}
-{#                    <p>Дата добавления: {{ car.created_at }}</p>#}
-{#                    <p>created: {{ car.created_at }}</p>#}
-{#                    <p>Дата появления: {{ car.added_at }}</p>#}
-{#                    <p>added: {{ car.added_at }}</p>#}
-{#                    <p>id: {{ car.advertisement_id }}</p>#}
-{#                    <p>Сайт: <a href="{{ car.advertisement_url }}" >{{ car.site }}</a></p>#}
-{##}
-{#                    {% if car.similar_advertisement.all %}#}
-{#                        <span class="position-absolute bottom-0 end-0 badge bg-warning text-dark">Дупликаты</span>#}
-{##}
-{#                        <button type="button" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#_{{ car.id }}_modal">#}
-{#                             Показать дупликаты#}
-{#                        </button>#}
-{##}
-{#                        <div class="modal fade" id="_{{ car.id }}_modal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">#}
-{#                            <div class="modal-dialog">#}
-{#                                <div class="modal-content">#}
-{#                                    <div class="modal-header">#}
-{#                                        <h5 class="modal-title" id="exampleModalLabel">Дубликаты</h5>#}
-{#                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>#}
-{#                                      </div>#}
-{#                                    <div class="modal-body">#}
-{#                                        {% for duplicate in car.similar_advertisement.all %}#}
-{#                                            <div class="card">#}
-{#                                                <div class="card-top">#}
-{#                                                {% if duplicate.photos.all|length == 0 %}#}
-{#                                                    <img src="https://yugcleaning.ru/wp-content/themes/consultix/images/no-image-found-360x250.png" class="d-block w-100" style="object-fit: cover">#}
-{#                                                {% elif duplicate.photos.all|length == 1 %}#}
-{#                                                    <div id="_{{ duplicate.id }}" class="carousel slide"  data-bs-ride="carousel">#}
-{#                                                        <div class="carousel-inner" style="height: 400px;">#}
-{#                                                            <img src="https://yugcleaning.ru/wp-content/themes/consultix/images/no-image-found-360x250.png" class="d-block w-100" style="object-fit: cover">#}
-{#                                                            <img src="{{ duplicate.photos.all.first.photo_url }}" class="d-block w-100" style="object-fit: cover">#}
-{#                                                        </div>#}
-{#                                                    </div>#}
-{#                                                {% else %}#}
-{#                                                    <div id="_{{ duplicate.id }}" class="carousel slide"  data-bs-ride="carousel">#}
-{#                                                    <div class="carousel-inner" style="height: 400px;">#}
-{##}
-{#                                                    {% for image in duplicate.photos.all %}#}
-{#                                                        {% if image == duplicate.photos.all|first %}#}
-{#                                                            <div class="carousel-item active">#}
-{#                                                        {% else %}#}
-{#                                                            <div class="carousel-item">#}
-{#                                                        {% endif %}#}
-{#                                                            <img src="{{ image.photo_url }}" class="img-responsive" style="height: 100%; width: 100%; object-fit: fill">#}
-{#                                                        </div>#}
-{#                                                    {% endfor %}#}
-{#                                                    </div>#}
-{#                                                        <button class="carousel-control-prev" type="button" data-bs-target="#_{{ duplicate.id }}" data-bs-slide="prev">#}
-{#                                                            <span class="carousel-control-prev-icon" aria-hidden="true"></span>#}
-{#                                                            <span class="visually-hidden">Previous</span>#}
-{#                                                        </button>#}
-{##}
-{#                                                        <button class="carousel-control-next" type="button" data-bs-target="#_{{ duplicate.id }}" data-bs-slide="next">#}
-{#                                                            <span class="carousel-control-next-icon" aria-hidden="true"></span>#}
-{#                                                            <span class="visually-hidden">Next</span>#}
-{#                                                        </button>#}
-{##}
-{#                                                        </div>#}
-{#                                                        {% endif %}#}
-{#                                                    </div>#}
-{##}
-{#                                                    <div class="card-body">#}
-{#                                                        <h5 class="card-title">{{ duplicate.brand }} {{ duplicate.model }}</h5>#}
-{#                                                        <p>Год: {{ duplicate.year }}</p>#}
-{#                                                        <p>Дата появления объявления: {{ duplicate.created_at }}</p>#}
-{#                                                        <p>В базе с: {{ duplicate.added_at }}</p>#}
-{#                                                        <p>id: {{ duplicate.advertisement_id }}</p>#}
-{#                                                        <a href="{{ duplicate.advertisement_url }}" >#}
-{#                                                            <p>Сайт: {{ duplicate.site }}</p>#}
-{#                                                        </a>#}
-{#                                                    </div>#}
-{#                                                </div>#}
-{#                                         {% endfor %}#}
-{#                                    </div>#}
-{#                                </div>#}
-{#                            </div>#}
-{#                        </div>#}
-{#                    {% endif %}#}
-{#                </div>#}
-{##}
-{##}
-{#            </div>#}
-{#        </div>#}
-{#    {% endfor %}#}
-{#    </div>#}
-{#        <div class="row justify-content-md-center">#}
-{#          <ul class="pagination justify-content-center">#}
-{#            {% if cars.has_previous %}#}
-{#                <li class="page-item">#}
-{#                  <a class="page-link" href="{% url_add_query page=cars.previous_page_number %}" aria-label="Previous"><span aria-hidden="true">&laquo;</span></a>#}
-{#                </li>#}
-{#            {% else %}#}
-{#                <li class="page-item disabled">#}
-{#                    <a class="page-link" aria-label="Previous"><span aria-hidden="true">&laquo;</span></a>#}
-{#                </li>#}
-{#            {% endif %}#}
-{##}
-{#            {% for i in cars.paginator.page_range  %}#}
-{#                {% if i <= cars.number|add:5 and i >= cars.number|add:-5 %}#}
-{#                    {% if i == cars.number %}#}
-{#                        <li class="page-item active"><a class="page-link" href="{% url_add_query page=i %}">{{i}}</a></li>#}
-{#                    {% else %}#}
-{#                        <li class="page-item"><a class="page-link" href="{% url_add_query page=i %}">{{ i }}</a></li>#}
-{#                    {% endif %}#}
-{#                {% endif %}#}
-{#            {% endfor %}#}
-{##}
-{#            {% if cars.has_next %}#}
-{#                <li class="page-item">#}
-{#                    <a class="page-link" href="{% url_add_query page=cars.next_page_number %}" aria-label="Next"><span aria-hidden="true">&raquo;</span></a>#}
-{#                </li>#}
-{#            {% else %}#}
-{#                <li class="page-item disabled">#}
-{#                    <a class="page-link" aria-label="Next"><span aria-hidden="true">&raquo;</span></a>#}
-{#                </li>#}
-{#            {% endif %}#}
-{#          </ul>#}
-{#        </div>#}
-{#</div>#}
