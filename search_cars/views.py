@@ -19,6 +19,7 @@ from .forms import SearchForm
 from django.http import QueryDict
 from tqdm import tqdm
 
+
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
@@ -230,6 +231,43 @@ def test_2(request):
     pool.join()
 
     return JsonResponse({'result': result})
+
+
+def test_3(request, adv_id):
+    link = 'http://crwl.ru/api/rest/latest/get_ads/'
+    payload = {
+        'api_key': '710090c4b15d091696d5369ee18cd3f5',
+        'region': '3504',
+        'last': str(1),
+        # 'last'    : 1
+    }
+    result = requests.get(link, params=payload)
+    json_result = result.json()
+
+    pool = ThreadPool()
+
+    item = json_result[adv_id]
+    post_adv_data = {
+        'id': item['Id'],
+        'url': item['url'],
+        'brand': item['marka'],
+        'model': item['model'],
+        'year': item['year'],
+        'text': item['info'],
+        'site': item['source'],
+        'added_at': timezone.make_aware(datetime.fromisoformat(item['dt'])),
+        'links': item['photo'].split(','),
+        'color': item['color'],
+        'latitude': item['latitude'],
+        'longitude': item['longitude'],
+    }
+
+    create_new_advertisement_threading(post_adv_data, pool, logger)
+
+    pool.close()
+    pool.join()
+
+    return JsonResponse({'result': True})
 
 
 def test_request(request):

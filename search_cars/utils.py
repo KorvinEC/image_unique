@@ -7,13 +7,14 @@ import cv2
 import requests
 import aiohttp
 import asyncio
-import time
+from tqdm import tqdm
+from asgiref.sync import sync_to_async
+from tqdm.asyncio import tqdm as tqdm_async
 from django.core.files.storage import FileSystemStorage
 from django.core.files.base import ContentFile
 import imagehash
 from PIL import Image, ImageFile
 ImageFile.LOAD_TRUNCATED_IMAGES = True
-from tqdm import tqdm
 
 
 asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
@@ -54,7 +55,7 @@ def create_hash_and_photo(photo):
     fs = FileSystemStorage()
     name = '_'.join(
         map(str, [photo.adv_id.id,
-                  photo.avg_hash])) + '.' + response.headers['Content-Type'].split('/')[1]
+                  photo.avg_hash]))
     file = fs.save(name=name, content=file)
 
     photo.photo = file
@@ -94,7 +95,7 @@ async def async_download_and_save(session, url, adv):
         photo.photo_url = url
 
         content = await response.read()
-        headers = response.headers['Content-Type']
+        headers = response.headers['Content-Type'].split('/')[1]
 
         file = ContentFile(content)
         photo.avg_hash = str(imagehash.average_hash(Image.open(file)))
@@ -110,16 +111,6 @@ async def async_download_and_save(session, url, adv):
         return photo
 
 
-def get_or_create_eventloop():
-    try:
-        return asyncio.get_event_loop()
-    except RuntimeError as ex:
-        if "There is no current event loop in thread" in str(ex):
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-            return asyncio.get_event_loop()
-
-
 async def async_download(links, adv):
     async with aiohttp.ClientSession() as session:
 
@@ -128,6 +119,17 @@ async def async_download(links, adv):
             tasks.append(asyncio.ensure_future(async_download_and_save(session, link, adv)))
 
         results = await asyncio.gather(*tasks)
+
+        bar = tqdm_async(
+                total=len(tasks),
+                position=0,
+                leave=True,
+        )
+        bar.set_description("Загрузка фотографий", refresh=True)
+
+        for f in asyncio.as_completed(tasks):
+            await f
+            bar.update()
 
         return results
 
@@ -150,6 +152,63 @@ def async_create_adv_photos(links, adv):
         photo.save()
 
     return photos
+
+
+def _get_adv_id(photo):
+    return photo.adv_id.id
+
+
+async def async_photos_download_and_save(session, photo):
+    async with session.get(photo.photo_url) as response:
+        content = await response.read()
+        headers = response.headers['Content-Type'].split('/')[1]
+
+        file = ContentFile(content)
+        photo.avg_hash = str(imagehash.average_hash(Image.open(file)))
+
+        fs = FileSystemStorage()
+        adv_id = sync_to_async(_get_adv_id, thread_sensitive=True)(photo)
+        name = '_'.join(
+            map(str, [await adv_id,
+                      photo.avg_hash])) + '.' + headers
+        file = fs.save(name=name, content=file)
+
+        photo.photo = file
+
+        return photo
+
+
+async def async_photos_download(photos):
+    async with aiohttp.ClientSession() as session:
+
+        tasks = []
+        for photo in photos:
+            tasks.append(asyncio.ensure_future(async_photos_download_and_save(session, photo)))
+
+        results = await asyncio.gather(*tasks)
+
+        bar = tqdm_async(
+                total=len(tasks),
+                position=0,
+                leave=True,
+        )
+        bar.set_description("Загрузка фотографий", refresh=True)
+
+        for f in asyncio.as_completed(tasks):
+            await f
+            bar.update()
+
+        return results
+
+
+def async_save_photos(photos):
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    future = asyncio.ensure_future(async_photos_download(photos))
+    results = loop.run_until_complete(future)
+
+    for photo in results:
+        photo.save()
 
 
 def orb_match_template(photo_1, photo_2):
@@ -287,24 +346,27 @@ def create_new_advertisement_threading(post_adv_data: dict, pool, logger=None):
                         )
                     )
 
-                dup_images_photos = []
+                dup_images = []
 
-                # bar = tqdm(
-                #         total=len(dup_adv.photos.all()),
-                #         position=0,
-                #         leave=True,
-                # )
-                # bar.set_description("Загрузка фотографий", refresh=True)
+                links = []
+
+                import os
 
                 for photo in dup_adv.photos.all():
                     if not photo.photo:
-                        create_hash_and_photo(photo)
-                    dup_images_photos.append(
+                        links.append(photo)
+                    else:
+                        if not os.path.exists(photo.photo.path):
+                            links.append(photo)
+
+                    dup_images.append(
                         photo
                     )
-                    # bar.update()
 
-                all_args = product(post_images, dup_images_photos)
+                if links:
+                    async_save_photos(links)
+
+                all_args = product(post_images, dup_images)
 
                 for args in chunks(all_args, 4):
 

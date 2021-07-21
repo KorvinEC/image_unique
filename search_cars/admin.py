@@ -8,6 +8,7 @@ from .models import *
 class AdvertisementAdmin(admin.ModelAdmin):
     list_display = ('id', 'advertisement_id', 'advertisement_url', 'model', 'brand', 'created_at', 'added_at')
     search_fields = ('id', 'advertisement_id', 'advertisement_url', 'model', 'brand')
+    exclude = ('photos', 'similar_advertisement')
 
 
 @admin.register(AdvertisementPhotos)
