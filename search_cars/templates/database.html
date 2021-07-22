@@ -97,7 +97,11 @@
         {% for car in cars %}
             <div class="card">
                 <a href="{% url 'advertisement' car.id %}">
-                    <img class="card-img-top" src="{{ car.photos.all.0.photo_url }}" alt="Card image cap" style="width: 100%;">
+                    {% if car.photos.all.0 %}
+                        <img class="card-img-top" src="{{ car.photos.all.0.photo_url }}" alt="Card image cap" style="width: 100%;">
+                    {% else %}
+                        <img class="card-img-top" src="https://yugcleaning.ru/wp-content/themes/consultix/images/no-image-found-360x250.png" alt="Card image cap" style="width: 100%;">
+                    {% endif %}
                 </a>
                 <div class="card-body pb-2">
                     <h5 class="card-title">{{ car.brand }} {{ car.model }} {{ car.year }}</h5>
@@ -111,7 +115,7 @@
                         <div class="col-auto">
                             <p class="card-text mb-0">
                                 <small class="text-muted">
-                                    Сайт: <a href="{{ car.advertisement_url }}">{{ car.site }}</a>
+                                    Сайт: <a class="text-secondary" href="{{ car.advertisement_url }}">{{ car.site }}</a>
                                 </small>
                             </p>
                         </div>
@@ -160,25 +164,33 @@
                     </li>
                 {% endif %}
 
-                {% for i in page_obj.paginator.page_range  %}
-                    {% if i <= page_obj.number|add:5 and i >= page_obj.number|add:-5 %}
+                {% load get_elided_page %}
+
+                {{ page.number }}
+                {% get_elided_page page_obj page_obj.number as pages %}
+
+                {% for i in pages %}
+{#                    {% if i <= page_obj.number|add:5 and i >= page_obj.number|add:-5 %}#}
                         {% if i == page_obj.number %}
                             <li class="page-item active"><a class="page-link" href="{% url_add_query page=i %}">{{i}}</a></li>
                         {% else %}
                             <li class="page-item"><a class="page-link" href="{% url_add_query page=i %}">{{ i }}</a></li>
                         {% endif %}
-                    {% endif %}
+{#                    {% endif %}#}
                 {% endfor %}
 
                 {% if page_obj.has_next %}
                     <li class="page-item">
-                        <a class="page-link" href="{% url_add_query page=page_obj.next_page_number %}" aria-label="Next"><span aria-hidden="true">&raquo;</span></a>
+                        <a class="page-link btn btn-secondary" href="{% url_add_query page=page_obj.next_page_number %}" aria-label="Next"><span aria-hidden="true">&raquo;</span></a>
                     </li>
                 {% else %}
                     <li class="page-item disabled">
                         <a class="page-link" aria-label="Next"><span aria-hidden="true">&raquo;</span></a>
                     </li>
                 {% endif %}
+{#                <li class="page-item">#}
+{#                    <a class="page-link btn btn-secondary" href="{% url_add_query page=page_obj.num_pages %}" aria-label="Next"><span aria-hidden="true"></span></a>#}
+{#                </li>#}
             </ul>
         </div>
     </div>

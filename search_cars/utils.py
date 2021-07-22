@@ -120,16 +120,16 @@ async def async_download(links, adv):
 
         results = await asyncio.gather(*tasks)
 
-        bar = tqdm_async(
-                total=len(tasks),
-                position=0,
-                leave=True,
-        )
-        bar.set_description("Загрузка фотографий", refresh=True)
-
-        for f in asyncio.as_completed(tasks):
-            await f
-            bar.update()
+        # bar = tqdm_async(
+        #         total=len(tasks),
+        #         position=0,
+        #         leave=True,
+        # )
+        # bar.set_description("Загрузка фотографий", refresh=True)
+        #
+        # for f in asyncio.as_completed(tasks):
+        #     await f
+        #     bar.update()
 
         return results
 
@@ -187,16 +187,16 @@ async def async_photos_download(photos):
 
         results = await asyncio.gather(*tasks)
 
-        bar = tqdm_async(
-                total=len(tasks),
-                position=0,
-                leave=True,
-        )
-        bar.set_description("Загрузка фотографий", refresh=True)
-
-        for f in asyncio.as_completed(tasks):
-            await f
-            bar.update()
+        # bar = tqdm_async(
+        #         total=len(tasks),
+        #         position=0,
+        #         leave=True,
+        # )
+        # bar.set_description("Загрузка фотографий", refresh=True)
+        #
+        # for f in asyncio.as_completed(tasks):
+        #     await f
+        #     bar.update()
 
         return results
 

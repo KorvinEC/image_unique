@@ -22,7 +22,12 @@
                                 <div class="tab-pane fade show active" id="home" role="tabpanel" aria-labelledby="home-tab">
                                     <div class="row g-0 mx-0">
                                         <div class="col-md-4">
-                                            <img src="{{ advertisement.photos.all.0.photo_url }}" class="img-fluid rounded-start img-thumbnail" alt="...">
+                                            {% if advertisement.photos.all.0 %}
+                                                <img class="img-fluid rounded-start img-thumbnail" src="{{ advertisement.photos.all.0.photo_url }}" alt="Card image cap" style="width: 100%;">
+                                            {% else %}
+                                                <img class="img-fluid rounded-start img-thumbnail" src="https://yugcleaning.ru/wp-content/themes/consultix/images/no-image-found-360x250.png" alt="Card image cap" style="width: 100%;">
+                                            {% endif %}
+{#                                            <img src="{{ advertisement.photos.all.0.photo_url }}" class="img-fluid rounded-start img-thumbnail" alt="...">#}
                                         </div>
                                         <div class="col-md-8">
                                             <div class="card-body">
@@ -46,7 +51,7 @@
                                                 </p>
                                                 <p class="card-text mb-0">
                                                     <small class="text-muted">
-                                                        Сайт: <a href="{{ advertisement.advertisement_url }}">{{ advertisement.site }}</a>
+                                                        Сайт: <a class="text-secondary" href="{{ advertisement.advertisement_url }}">{{ advertisement.site }}</a>
                                                     </small>
                                                 </p>
                                             </div>
@@ -113,7 +118,7 @@
                                                             </p>
                                                             <p class="card-text mb-0">
                                                                 <small class="text-muted">
-                                                                    Сайт: <a href="{{ dup.advertisement_url }}">{{ dup.site }}</a>
+                                                                    Сайт: <a class="text-secondary" href="{{ dup.advertisement_url }}">{{ dup.site }}</a>
                                                                 </small>
                                                             </p>
                                                         </div>

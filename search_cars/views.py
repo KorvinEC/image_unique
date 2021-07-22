@@ -35,6 +35,9 @@ ch.setFormatter(formatter)
 logger.addHandler(ch)
 
 
+from django.db.models import Avg, Count
+
+
 def index(request):
     # Обработчик главной страницы
     # :param request:
@@ -55,7 +58,6 @@ def index(request):
     ret = []
 
     for item in result_json:
-        print(item)
         if item['company'] == '0' and item['run'] != '0':
             item['photo'] = item['photo'].split(',')
             ret.append(item)
@@ -163,7 +165,7 @@ def test(request):
     result = requests.get(link, params=payload)
     json_result = result.json()
 
-    print(json_result[0])
+    print(json_result)
 
     pool = ThreadPool()
 

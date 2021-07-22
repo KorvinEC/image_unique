@@ -2,6 +2,7 @@
 div.dropdown-multicol{
   width: 30em;
 }
+
 div.dropdown-row>a.dropdown-item{
   display:inline-block;
   width: 24%;
@@ -11,9 +12,30 @@ div.dropdown-row>a.dropdown-item{
 div.dropdown-multicol2{
   width: 30em;
 }
+
 div.dropdown-multicol2>div.dropdown-col{
   display:inline-block;
   width: 32%;
+}
+
+
+li.page-item.active > a.page-link {
+  color: #fff;
+  background-color: #6c757d;
+  border-color: #6c757d;
+}
+
+li.page-item > a.page-link {
+  color: #6c757d;
+  background-color: transparent;
+  background-image: none;
+  /*border-color: #6c757d;*/
+}
+
+a.nav-link {
+  color: #6c757d;
+  background-color: transparent;
+  background-image: none;
 }
 
 /*
@@ -25,3 +47,4 @@ div.dropdown-row>a.dropdown-item{
 
 (Former may be more convenient for responsive)
 */
+
