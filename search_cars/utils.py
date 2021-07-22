@@ -4,6 +4,7 @@ import mysql.connector
 import PIL
 import io
 import cv2
+import os
 import requests
 import aiohttp
 import asyncio
@@ -17,7 +18,8 @@ from PIL import Image, ImageFile
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 
 
-asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
+if os.name == 'nt':
+    asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
 
 def get_updates():
