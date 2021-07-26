@@ -3,7 +3,7 @@
 {% block content %}
     <div class="fluid-container pt-4 py-2">
         <div class="row justify-content-center mx-0">
-            <div class="col-6 px-0">
+            <div class="col-sm-6 px-0">
                 <div class="col py-3 sticky-top" id="main_content">
                     <div class="card">
                         <div class="card-header">
@@ -27,7 +27,6 @@
                                             {% else %}
                                                 <img class="img-fluid rounded-start img-thumbnail" src="https://yugcleaning.ru/wp-content/themes/consultix/images/no-image-found-360x250.png" alt="Card image cap" style="width: 100%;">
                                             {% endif %}
-{#                                            <img src="{{ advertisement.photos.all.0.photo_url }}" class="img-fluid rounded-start img-thumbnail" alt="...">#}
                                         </div>
                                         <div class="col-md-8">
                                             <div class="card-body">
@@ -51,7 +50,7 @@
                                                 </p>
                                                 <p class="card-text mb-0">
                                                     <small class="text-muted">
-                                                        Сайт: <a class="text-secondary" href="{{ advertisement.advertisement_url }}">{{ advertisement.site }}</a>
+                                                        Сайт: <a class="text-secondary" target="_blank" href="{{ advertisement.advertisement_url }}">{{ advertisement.site }}</a>
                                                     </small>
                                                 </p>
                                             </div>
@@ -73,7 +72,7 @@
                 </div>
             </div>
             {% if  advertisement.similar_advertisement.all %}
-                <div class="col-6 px-0">
+                <div class="col-sm-6 px-0">
                     <div class="row mx-0">
                         <div class="col py-3 pl-3">
                             {% for dup in advertisement.similar_advertisement.all %}

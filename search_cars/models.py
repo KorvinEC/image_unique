@@ -1,6 +1,5 @@
 from django.db import models
 from django.utils import timezone
-# from .models import *
 
 
 # Create your models here.
@@ -26,8 +25,12 @@ class Advertisement(models.Model):
     color = models.CharField(verbose_name='Цвет автомобиля', max_length=15, blank=True)
     info = models.TextField(verbose_name="Текст объявление")
     site = models.CharField(verbose_name="Сайт объявления", max_length=30)
+
     latitude = models.CharField(verbose_name='Широта', max_length=20, blank=True)
     longitude = models.CharField(verbose_name="Долгота", max_length=20, blank=True)
+
+    run = models.IntegerField(verbose_name='Пробег', blank=True, null=True)
+    price = models.IntegerField(verbose_name="Цена", blank=True, null=True)
 
     original = models.BooleanField(verbose_name='Оригинальное объявление', null=True)
 

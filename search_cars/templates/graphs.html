@@ -1,0 +1,141 @@
+{% extends 'base.html' %}
+{% block content %}
+    <div class="container pt-4">
+        <div class="row mb-4 justify-content-center">
+            <div class="col-md-6 text-center">
+                <h3>Объявлений</h3>
+                <canvas id="adv_bar" class="mb-4" width="400" height="400"></canvas>
+                <script>
+                    var ctx = document.getElementById('adv_bar').getContext('2d');
+                    var myChart = new Chart(ctx, {
+                        type: 'bar',
+                        data: {
+                            labels: [{% for site in sites_count %} '{{ site.site }}', {% endfor %}],
+                            datasets: [{
+                                label: 'Всего объявлений',
+                                data: [{% for site in sites_count %} {{ site.site__count }}, {% endfor %}],
+                                backgroundColor: [
+                                    'rgba(255, 99, 132)',
+                                ],
+                                borderColor: [
+                                    'rgba(255, 99, 132)',
+                                ],
+                                borderWidth: 1
+                            }, {
+                                label: 'Дубликаты',
+                                data: [{% for site in dup_sites_count %} {{ site.site__count }}, {% endfor %}],
+                                backgroundColor: [
+                                    'rgba(54, 162, 235)',
+                                ],
+                                borderColor: [
+                                    'rgba(54, 162, 235)',
+                                ],
+                                borderWidth: 1
+                            }]
+                        },
+                        options: {
+                            plugins: {
+                                title: {
+                                    display: true,
+                                    text: 'Оригинальных объявлений: {{ total_sites }} | Дубликатов: {{ total_dup_sites }} | Всего: {{ total_sum }}',
+                                    position: 'bottom'
+                                },
+                            }
+                        },
+                    });
+                </script>
+            </div>
+        </div>
+{#        <div class="row mb-4">#}
+{#            <div class="col-md-6 text-center">#}
+{#                <h3>Всего объявлений</h3>#}
+{#                <canvas id="over_all_adv" class="mb-4" width="400" height="400"></canvas>#}
+{#                <p></p>#}
+{#            </div>#}
+{#            <script>#}
+{#                var ctx = document.getElementById('over_all_adv').getContext('2d');#}
+{#                var myChart = new Chart(ctx, {#}
+{#                    type: 'pie',#}
+{#                    data: {#}
+                        {#labels: [{% for item in sites %} {% for i in row %} '{{ i }}', {% endfor %} {% endfor %}],#}
+{#                        labels: [{% for site in sites_count %} '{{ site.site }}', {% endfor %}],#}
+{#                        datasets: [{#}
+{#                            label: '# of Votes',#}
+{#                            data: [{% for site in sites_count %} {{ site.site__count }}, {% endfor %}],#}
+{#                            backgroundColor: [#}
+{#                                'rgba(255, 99, 132)',#}
+{#                                'rgba(54, 162, 235)',#}
+{#                                'rgba(255, 206, 86)',#}
+{#                                'rgba(75, 192, 192)',#}
+{#                                'rgba(153, 102, 255)',#}
+{#                                'rgba(255, 159, 64)'#}
+{#                            ],#}
+{#                            borderColor: [#}
+{#                                'rgba(255, 99, 132, 1)',#}
+{#                                'rgba(54, 162, 235, 1)',#}
+{#                                'rgba(255, 206, 86, 1)',#}
+{#                                'rgba(75, 192, 192, 1)',#}
+{#                                'rgba(153, 102, 255, 1)',#}
+{#                                'rgba(255, 159, 64, 1)'#}
+{#                            ],#}
+{#                            borderWidth: 1#}
+{#                        }]#}
+{#                    },#}
+{#                    options: {#}
+{#                        plugins: {#}
+{#                            title: {#}
+{#                                display: true,#}
+{#                                text: 'Всего объявлений: {{ total_sites }}',#}
+{#                                position: 'bottom'#}
+{#                            }#}
+{#                        }#}
+{#                    },#}
+{#                });#}
+{#            </script>#}
+{#            <div class="col-md-6 text-center">#}
+{#                <h3>Дубликатов на каждой площадке</h3>#}
+{#                <canvas id="myChart" class="mb-4" width="400" height="400"></canvas>#}
+{#            </div>#}
+{#            <script>#}
+{#            var ctx = document.getElementById('myChart').getContext('2d');#}
+{#            var myChart = new Chart(ctx, {#}
+{#                type: 'pie',#}
+{#                data: {#}
+                    {#labels: [{% for item in sites %} {% for i in row %} '{{ i }}', {% endfor %} {% endfor %}],#}
+{#                    labels: [{% for site in dup_sites_count %} '{{ site.site }}', {% endfor %}],#}
+{#                    datasets: [{#}
+{#                        label: '# of Votes',#}
+{#                        data: [{% for site in dup_sites_count %} {{ site.site__count }}, {% endfor %}],#}
+{#                        backgroundColor: [#}
+{#                            'rgba(255, 99, 132)',#}
+{#                            'rgba(54, 162, 235)',#}
+{#                            'rgba(255, 206, 86)',#}
+{#                            'rgba(75, 192, 192)',#}
+{#                            'rgba(153, 102, 255)',#}
+{#                            'rgba(255, 159, 64)'#}
+{#                        ],#}
+{#                        borderColor: [#}
+{#                            'rgba(255, 99, 132, 1)',#}
+{#                            'rgba(54, 162, 235, 1)',#}
+{#                            'rgba(255, 206, 86, 1)',#}
+{#                            'rgba(75, 192, 192, 1)',#}
+{#                            'rgba(153, 102, 255, 1)',#}
+{#                            'rgba(255, 159, 64, 1)'#}
+{#                        ],#}
+{#                        borderWidth: 1#}
+{#                    }]#}
+{#                },#}
+{#                options: {#}
+{#                    plugins: {#}
+{#                        title: {#}
+{#                            display: true,#}
+{#                            text: 'Всего объявлений: {{ total_dup_sites }}',#}
+{#                            position: 'bottom'#}
+{#                        }#}
+{#                    }#}
+{#                },#}
+{#            });#}
+{#            </script>#}
+{#        </div>#}
+    </div>
+{% endblock %}

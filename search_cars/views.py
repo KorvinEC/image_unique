@@ -3,22 +3,18 @@ from django.http import JsonResponse
 from rest_framework.views import APIView
 from django.views.generic.list import ListView
 from django.views.generic.detail import DetailView
+from django.views.generic import TemplateView
+from django.conf import settings
 
 import requests
-from .models import Advertisement, AdvertisementPhotos
+from .models import Advertisement
 from django.utils import timezone
 import logging
-import numpy as np
 
 from multiprocessing.dummy import Pool as ThreadPool
 from datetime import datetime
-from django.core.paginator import Paginator,  EmptyPage, PageNotAnInteger
 from .utils import create_new_advertisement_threading, get_updates
-from django.shortcuts import redirect
-from .forms import SearchForm
-from django.http import QueryDict
-from tqdm import tqdm
-
+import re
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -39,15 +35,9 @@ from django.db.models import Avg, Count
 
 
 def index(request):
-    # Обработчик главной страницы
-    # :param request:
-    #     request - запрос к странице
-    # :return:
-    #     Возвращается главная страница
-
     link = 'http://crwl.ru/api/rest/latest/get_ads/'
     payload = {
-        'api_key' : '710090c4b15d091696d5369ee18cd3f5',
+        'api_key' : settings.API_KEY,
         'region'  : '3504',
         'last'    : '1'
     }
@@ -64,7 +54,40 @@ def index(request):
     return render(request, 'index.html', {'cars': ret})
 
 
+from django.db.models import Case, Value, When
+
+
+class GraphsView(TemplateView):
+    # Обработчик страницы с графиками
+
+    template_name = 'graphs.html'
+
+    def get_context_data(self, *, object_list=None, **kwargs):
+        context = super(GraphsView, self).get_context_data()
+
+        context['title'] = 'Графики'
+
+        sites_count = Advertisement.objects.values('site').annotate(Count('site')).order_by('-site__count')
+        # sites_count = Advertisement.objects.filter(~Q).values('site').annotate(Count('site')).order_by('-site__count')
+
+        dup_sites_count = sites_count.filter(original=False)
+
+        # print(sites_count)
+        # print(dup_sites_count)
+
+        context['sites_count']  = sites_count
+        context['total_sites']  = sum([i['site__count'] for i in sites_count])
+
+        context['dup_sites_count']  = dup_sites_count
+        context['total_dup_sites']  = sum([i['site__count'] for i in dup_sites_count])
+        context['total_sum']  = context['total_sites'] + context['total_dup_sites']
+
+        return context
+
+
 class DatabaseList(ListView):
+    # Обработчик главной страницы вывода объявлений из базы данных
+
     model = Advertisement
     template_name = 'database.html'
     context_object_name = 'cars'
@@ -77,10 +100,16 @@ class DatabaseList(ListView):
         start_date = self.request.GET.get('start_date')
         end_date = self.request.GET.get('end_date')
         duplicates = self.request.GET.get('duplicates')
-        url = self.request.GET.get('url')
         sort_by = self.request.GET.get('sort_by')
+        site = self.request.GET.get('site')
+        adv_id = self.request.GET.get('adv_id')
 
-        advertisements = Advertisement.objects.filter(original=True)
+        raw_url = self.request.GET.get('url')
+        url_reg = re.compile(r"https?://(www\.)?")
+        url = url_reg.sub('', raw_url).strip().strip('/') if raw_url else None
+
+        # advertisements = Advertisement.objects.filter(original=True)
+        advertisements = Advertisement.objects.all()
 
         if brand and len(brand) != 0:
             advertisements = advertisements.filter(
@@ -106,11 +135,19 @@ class DatabaseList(ListView):
             )
         if url:
             advertisements = advertisements.filter(
-                advertisement_url=url
+                advertisement_url__contains =url
             )
         if year:
             advertisements = advertisements.filter(
                 year=year
+            )
+        if site:
+            advertisements = advertisements.filter(
+                site=site
+            )
+        if adv_id:
+            advertisements = advertisements.filter(
+                advertisement_id=adv_id
             )
         if sort_by == 'created':
             advertisements = advertisements.order_by('-created_at')
@@ -126,19 +163,31 @@ class DatabaseList(ListView):
                   Advertisement.objects.order_by('model').values_list('model').distinct().exclude(model='')]
         brands = [i[0] for i in
                   Advertisement.objects.order_by('brand').values_list('brand').distinct().exclude(brand='')]
+        sites  = [i[0] for i in
+                  Advertisement.objects.order_by('site').values_list('site').distinct()]
 
-        models = zip(*[iter(models)] * 4)
-        brands = zip(*[iter(brands)] * 4)
+        models = chunks(models, 4)
+        brands = chunks(brands, 4)
+        sites  = chunks(sites, 4)
 
         context['models'] = models
         context['brands'] = brands
+        context['sites']  = sites
 
         context['title'] = 'Объявления'
 
         return context
 
 
+def chunks(lst, n):
+    """Yield successive n-sized chunks from lst."""
+    for i in range(0, len(lst), n):
+        yield lst[i:i + n]
+
+
 class AdvertisementPost(DetailView):
+    # Обработчик страницы вывода информации об объявлении
+
     model = Advertisement
     template_name = 'advertisement.html'
 
@@ -157,7 +206,7 @@ class AdvertisementPost(DetailView):
 def test(request):
     link = 'http://crwl.ru/api/rest/latest/get_ads/'
     payload = {
-        'api_key' : '710090c4b15d091696d5369ee18cd3f5',
+        'api_key' : settings.API_KEY,
         'region'  : '3504',
         'last'    : str(1),
         # 'last'    : 1
@@ -191,9 +240,6 @@ def test(request):
     pool.join()
 
     return JsonResponse({'result': True})
-
-
-import asyncio
 
 
 def test_2(request):
@@ -235,10 +281,69 @@ def test_2(request):
     return JsonResponse({'result': result})
 
 
+from django.http import HttpResponse
+
+
+def test_4(request):
+    link = 'https://proxylist.geonode.com/api/proxy-list'
+    payload = {
+        'limit': '50',
+        'page': '1',
+        'sort_by': 'lastChecked',
+        'sort_type': 'desc',
+        'protocols': 'https,https',
+        # 'country': 'RU'
+    }
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/81.0.4044.138 Safari/537.36'
+    }
+    result = requests.get(link, params=payload, headers=headers)
+    proxies = result.json()
+
+    link = 'https://www.showmemyip.com/'
+
+    for proxy_obj in proxies['data']:
+
+        proxy = dict()
+
+        for protocol in proxy_obj['protocols']:
+            proxy[protocol] = f'{protocol}://{proxy_obj["ip"]}:{proxy_obj["port"]}'
+
+        print(proxy)
+
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/81.0.4044.138 Safari/537.36'
+        }
+
+        try:
+            result = requests.get(link, headers=headers, proxies=proxy, timeout=3)
+            print(result)
+        except requests.exceptions.ProxyError as ex:
+            print(ex)
+        except requests.exceptions.ConnectTimeout as ex:
+            print(ex)
+        except ValueError as ex:
+            print(ex)
+    return HttpResponse('???')
+
+
+def test_5(request):
+    link = 'https://www.showmemyip.com/'
+
+    proxy = {'https': 'https://5.188.114.54:8081'}
+
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/81.0.4044.138 Safari/537.36'
+    }
+
+    result = requests.get(link, headers=headers, proxies=proxy)
+    return result.text
+
+
 def test_3(request, adv_id):
     link = 'http://crwl.ru/api/rest/latest/get_ads/'
     payload = {
-        'api_key': '710090c4b15d091696d5369ee18cd3f5',
+        'api_key': settings.API_KEY,
         'region': '3504',
         'last': str(1),
         # 'last'    : 1
@@ -313,6 +418,8 @@ class CheckUnique(APIView):
             'site': post_data.get('site'),
             'added_at': timezone.make_aware(datetime.fromisoformat(post_data.get('date'))),
             'links': post_data.get('photos').split(','),
+            'run': int(post_data.get('adv_run')),
+            'price': int(post_data.get('adv_price'))
         }
 
         # Проверяем на наличие данного объявления

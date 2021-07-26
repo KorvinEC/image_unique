@@ -7,3 +7,5 @@
 /pscp.exe
 /.idea
 /media
+/search_cars/utils_test.py
+/work_site/.env
