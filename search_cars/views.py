@@ -108,8 +108,8 @@ class DatabaseList(ListView):
         url_reg = re.compile(r"https?://(www\.)?")
         url = url_reg.sub('', raw_url).strip().strip('/') if raw_url else None
 
-        # advertisements = Advertisement.objects.filter(original=True)
-        advertisements = Advertisement.objects.all()
+        advertisements = Advertisement.objects.filter(original=True)
+        # advertisements = Advertisement.objects.all()
 
         if brand and len(brand) != 0:
             advertisements = advertisements.filter(

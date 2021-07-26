@@ -256,11 +256,11 @@ def create_new_advertisement_threading(post_adv_data: dict, pool, logger=None):
             run__isnull=True,
             price__isnull=True,
         )
-        dup_adv = dup_advs.filter(
+        dup_adv = dup_adv.filter(
             run__gt=post_adv_data['run'] - 1000,
             run__lt=post_adv_data['run'] + 1000,
-            price__gt=post_adv_data['price'] - 10000,
-            price__lt=post_adv_data['price'] + 10000,
+            price__gt=post_adv_data['price'] - 10_000,
+            price__lt=post_adv_data['price'] + 10_000,
         )
 
         if dup_adv:
@@ -299,51 +299,48 @@ def create_new_advertisement_threading(post_adv_data: dict, pool, logger=None):
         # Подготавливаем изображения
 
         for dup_adv in dup_advs:
-            if dup_adv.original:
-                if logger:
-                    logger.debug(
-                        f'{new_adv} Проверка объявления {dup_adv}'
-                        f' с {len(dup_adv.photos.all())} фотографиями'
-                    )
+            if logger:
+                logger.debug(
+                    f'{new_adv} Проверка объявления {dup_adv}'
+                    f' с {len(dup_adv.photos.all())} фотографиями'
+                )
 
-                dup_images = []
+            dup_images = []
 
-                links = []
+            links = []
 
-                import os
-
-                for photo in dup_adv.photos.all():
-                    if not photo.photo:
+            for photo in dup_adv.photos.all():
+                if not photo.photo:
+                    links.append(photo)
+                else:
+                    if not os.path.exists(photo.photo.path):
                         links.append(photo)
-                    else:
-                        if not os.path.exists(photo.photo.path):
-                            links.append(photo)
 
-                    dup_images.append(
-                        photo
-                    )
+                dup_images.append(
+                    photo
+                )
 
-                if links:
-                    async_save_photos(links)
+            if links:
+                async_save_photos(links)
 
-                all_args = product(post_images, dup_images)
+            all_args = product(post_images, dup_images)
 
-                for args in chunks(all_args, 4):
+            for args in chunks(all_args, 4):
 
-                    results = pool.starmap(hash_orb_match_template, args)
+                results = pool.starmap(hash_orb_match_template, args)
 
-                    if True in results:
-                        if logger:
-                            logger.debug(
-                                f'{new_adv} Найдено совпадение {dup_adv}'
-                            )
+                if True in results:
+                    if logger:
+                        logger.debug(
+                            f'{new_adv} Найдено совпадение {dup_adv}'
+                        )
 
-                        res = save_adv_and_photos(new_adv, post_images, False)
+                    res = save_adv_and_photos(new_adv, post_images, False)
 
-                        dup_adv.similar_advertisement.add(new_adv)
-                        dup_adv.save()
+                    dup_adv.similar_advertisement.add(new_adv)
+                    dup_adv.save()
 
-                        return res
+                    return res
 
         if logger:
             logger.debug(

@@ -12,7 +12,7 @@
                     <div class="col-lg-2 col-md-6 pb-2"><input class="form-control" value="{{ request.GET.start_date }}" type="text" placeholder="С: 01/01/0001" name="start_date"></div>
                     <div class="col-lg-2 col-md-6 pb-2"><input class="form-control" value="{{ request.GET.end_date }}" type="text" placeholder="По: 01/01/0001" name="end_date"></div>
                     <div class="input-group col-lg-2 col-md-4 pb-2 align-self-end">
-                        <input class="form-control" id="brand_input" value="{{ request.GET.site }}" type="text" placeholder="Сайт" name="site">
+                        <input class="form-control" id="site_input" value="{{ request.GET.site }}" type="text" placeholder="Сайт" name="site">
                         <div class="input-group-append dropleft">
                             <button type="button" class="btn btn-outline-secondary dropdown-toggle dropdown-toggle-split" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                             <span class="sr-only">Toggle Dropdown</span>
@@ -22,7 +22,7 @@
                                     <div class="dropdown-row">
                                         {% for site in site_row %}
                                             <a class="dropdown-item px-1 text-center text-truncate"
-                                               onclick="insert_data_into_input('{{ site }}', 'brand_input')"
+                                               onclick="insert_data_into_input('{{ site }}', 'site_input')"
                                             >{{ site }}</a>
                                         {% endfor %}
                                     </div>

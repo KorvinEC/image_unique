@@ -82,9 +82,11 @@
                                             <li class="nav-item">
                                               <a class="nav-link active" id="duplicate_{{ dup.id }}_-tab" data-toggle="tab" href="#duplicate_{{ dup.id }}" role="tab" aria-controls="duplicate_{{ dup.id }}" aria-selected="true">Объявление</a>
                                             </li>
-                                            <li class="nav-item">
-                                              <a class="nav-link" id="duplicate_photo_{{ dup.id }}_-tab" data-toggle="tab" href="#duplicate_photo_{{ dup.id }}" role="tab" aria-controls="duplicate_photo_{{ dup.id }}" aria-selected="false">Фотографии</a>
-                                            </li>
+                                            {% if dup.photos.all.0 %}
+                                                <li class="nav-item">
+                                                  <a class="nav-link" id="duplicate_photo_{{ dup.id }}_-tab" data-toggle="tab" href="#duplicate_photo_{{ dup.id }}" role="tab" aria-controls="duplicate_photo_{{ dup.id }}" aria-selected="false">Фотографии</a>
+                                                </li>
+                                            {% endif %}
                                         </ul>
                                     </div>
 
@@ -93,7 +95,11 @@
                                             <div class="tab-pane fade show active" id="duplicate_{{ dup.id }}" role="tabpanel" aria-labelledby="home-tab">
                                                 <div class="row g-0">
                                                     <div class="col-md-4">
-                                                        <img src="{{ dup.photos.all.0.photo_url }}" class="img-fluid rounded-start img-thumbnail" alt="...">
+                                                        {% if dup.photos.all.0 %}
+                                                            <img class="img-fluid rounded-start img-thumbnail" src="{{ dup.photos.all.0.photo_url }}" alt="Card image cap" style="width: 100%;">
+                                                        {% else %}
+                                                            <img class="img-fluid rounded-start img-thumbnail" src="https://yugcleaning.ru/wp-content/themes/consultix/images/no-image-found-360x250.png" alt="Card image cap" style="width: 100%;">
+                                                        {% endif %}
                                                     </div>
                                                     <div class="col-md-8">
                                                         <div class="card-body">
