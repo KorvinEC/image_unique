@@ -418,9 +418,12 @@ class CheckUnique(APIView):
             'site': post_data.get('site'),
             'added_at': timezone.make_aware(datetime.fromisoformat(post_data.get('date'))),
             'links': post_data.get('photos').split(','),
-            'run': int(post_data.get('adv_run')),
-            'price': int(post_data.get('adv_price'))
         }
+
+        if len(post_data.get('adv_run')) != 0:
+            post_adv_data['run'] = int(post_data.get('adv_run'))
+        if len(post_data.get('adv_price')) != 0:
+            post_adv_data['price'] = int(post_data.get('adv_price'))
 
         # Проверяем на наличие данного объявления
 

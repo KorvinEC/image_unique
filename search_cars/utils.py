@@ -224,8 +224,8 @@ def create_new_advertisement_threading(post_adv_data: dict, pool, logger=None):
         new_adv.longitude     = post_adv_data['longitude']
 
     if ('run' and 'price') in post_adv_data.keys():
-        new_adv.run      = post_adv_data['run']
-        new_adv.price     = post_adv_data['price']
+        new_adv.run   = post_adv_data['run']
+        new_adv.price = post_adv_data['price']
 
     new_adv.save()
 
@@ -238,8 +238,6 @@ def create_new_advertisement_threading(post_adv_data: dict, pool, logger=None):
         original=True,
         added_at__lte=post_adv_data['added_at'],
     )
-
-    print(dup_advs)
 
     # Загрузка изображений из POST запроса с созданием класса AdvertisementPhotos
 
@@ -257,17 +255,22 @@ def create_new_advertisement_threading(post_adv_data: dict, pool, logger=None):
             price__isnull=True,
         )
         dup_adv = dup_adv.filter(
-            run__gt=post_adv_data['run'] - 1000,
-            run__lt=post_adv_data['run'] + 1000,
-            price__gt=post_adv_data['price'] - 10_000,
-            price__lt=post_adv_data['price'] + 10_000,
+            # run__gt=post_adv_data['run'] - 1000,
+            # run__lt=post_adv_data['run'] + 1000,
+            # price__gt=post_adv_data['price'] - 10_000,
+            # price__lt=post_adv_data['price'] + 10_000,
+
+            run=post_adv_data['run'],
+            price=post_adv_data['price'],
         )
+
+        # print(dup_adv)
 
         if dup_adv:
             dup_adv = dup_adv.first()
 
             logger.debug(
-                f"{new_adv} Найден дубликат {dup_adv}"
+                f"{new_adv} Найден дубликат по пробегу и цене {dup_adv}"
             )
 
             res = save_adv_and_photos(new_adv, post_images, False)
@@ -336,6 +339,16 @@ def create_new_advertisement_threading(post_adv_data: dict, pool, logger=None):
                         )
 
                     res = save_adv_and_photos(new_adv, post_images, False)
+
+                    print(f'Adv: {dup_adv}, '
+                          f'run: {dup_adv.run}, '
+                          f'price: {dup_adv.price}, '
+                          f'type: {type(dup_adv.run)}')
+
+                    # if not dup_adv.run:
+                    #     dup_adv.run = None
+                    # if not dup_adv.price:
+                    #     dup_adv.price = None
 
                     dup_adv.similar_advertisement.add(new_adv)
                     dup_adv.save()
