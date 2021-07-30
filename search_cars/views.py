@@ -439,6 +439,7 @@ def test_6(request):
         created_at__gte=timezone.make_aware(datetime.fromisoformat('2021-07-25 00:00:00'))
     )
     for i in advs_to_del:
+        logger.debug(f'Deleting {i} {i.created_at}')
         i.delete()
 
     return HttpResponse()
