@@ -175,9 +175,9 @@ def hash_orb_match_template(photo_1, photo_2):
 
     res_hash = hash_1 - hash_2
 
-    if res_hash <= 5:
+    if res_hash == 0:
         return True
-    elif 5 < res_hash <= 20:
+    elif 0 < res_hash <= 15:
         return orb_match_template(photo_1, photo_2)
     else:
         return False
@@ -287,7 +287,7 @@ def create_new_advertisement_threading(post_adv_data: dict, pool, logger=None):
 
         if logger:
             logger.debug(
-                f'{new_adv} Нет подходящих объявлений'
+                f'{new_adv} Нет дублированных объявлений'
             )
 
         return save_adv_and_photos(new_adv, post_images, True)
@@ -340,16 +340,6 @@ def create_new_advertisement_threading(post_adv_data: dict, pool, logger=None):
 
                     res = save_adv_and_photos(new_adv, post_images, False)
 
-                    print(f'Adv: {dup_adv}, '
-                          f'run: {dup_adv.run}, '
-                          f'price: {dup_adv.price}, '
-                          f'type: {type(dup_adv.run)}')
-
-                    # if not dup_adv.run:
-                    #     dup_adv.run = None
-                    # if not dup_adv.price:
-                    #     dup_adv.price = None
-
                     dup_adv.similar_advertisement.add(new_adv)
                     dup_adv.save()
 
@@ -357,7 +347,7 @@ def create_new_advertisement_threading(post_adv_data: dict, pool, logger=None):
 
         if logger:
             logger.debug(
-                f'{new_adv} Нет подходящих объявлений'
+                f'{new_adv} Нет дублированных объявлений'
             )
 
         return save_adv_and_photos(new_adv, post_images, True)

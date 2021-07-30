@@ -31,7 +31,7 @@ ch.setFormatter(formatter)
 logger.addHandler(ch)
 
 
-from django.db.models import Avg, Count
+from django.db.models import Count
 
 
 def index(request):
@@ -52,9 +52,6 @@ def index(request):
             item['photo'] = item['photo'].split(',')
             ret.append(item)
     return render(request, 'index.html', {'cars': ret})
-
-
-from django.db.models import Case, Value, When
 
 
 class GraphsView(TemplateView):
@@ -346,7 +343,6 @@ def test_3(request, adv_id):
         'api_key': settings.API_KEY,
         'region': '3504',
         'last': str(1),
-        # 'last'    : 1
     }
     result = requests.get(link, params=payload)
     json_result = result.json()
@@ -436,6 +432,16 @@ class CheckUnique(APIView):
 
         return JsonResponse({'unique': result})
 
+
+def test_6(request):
+    advs_to_del = Advertisement.objects.filter(
+        original=False,
+        created_at__gte=timezone.make_aware(datetime.fromisoformat('2021-07-25 00:00:00'))
+    )
+    for i in advs_to_del:
+        i.delete()
+
+    return HttpResponse()
 
 
 
