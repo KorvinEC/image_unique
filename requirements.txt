@@ -81,7 +81,7 @@ torch==1.9.0
 torchvision==0.10.0
 tqdm==4.61.2
 Twisted==21.2.0
-twisted-iocpsupport==1.0.1
+
 txaio==21.2.1
 typing-extensions==3.10.0.0
 urllib3==1.25.11

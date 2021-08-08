@@ -5,50 +5,12 @@
 
 
 <div class="container pt-4">
-{#    <div class="row">#}
-{#        <div class="col">#}
-{#            <main class="container">#}
-{#                <div class="row" style="padding-top: 100px">#}
-{#                    <div class="col">#}
-{#                        <input data-date-format="dd/mm/yyyy" id="datepicker">#}
-{#                    </div>#}
-{#                </div>#}
-{#            </main>#}
-{#        </div>#}
-{#    </div>#}
     <div class="row ">
         <div class="col ">
             <form>
                 <div class="row form-group mb-2">
                     <div class="col-lg-2 col-md-6 pb-2"><input data-date-format="dd/mm/yyyy"  id="start_date" class="form-control" value="{{ request.GET.start_date }}" type="text" placeholder="Начальная дата" name="start_date"></div>
                     <div class="col-lg-2 col-md-6 pb-2"><input data-date-format="dd/mm/yyyy"  id="end_date" class="form-control" value="{{ request.GET.end_date }}" type="text" placeholder="Конечная дата" name="end_date"></div>
-                        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
-                        <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.7.1/js/bootstrap-datepicker.min.js"></script>
-                        <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
-                        <script type="text/javascript">
-                            $('#start_date').datepicker({
-                                weekStart: 1,
-                                daysOfWeekHighlighted: "6,0",
-                                autoclose: true,
-                                {#todayHighlight: true,#}
-                                {#minDate: new Date($('#hiddendelivdate').val()),#}
-                                monthNames : ['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'],
-                                dayNamesMin : ['Вс','Пн','Вт','Ср','Чт','Пт','Сб'],
-                            });
-                            {#$('#start_date').datepicker("setDate", new Date());#}
-
-                            $('#end_date').datepicker({
-                                weekStart: 1,
-                                daysOfWeekHighlighted: "6,0",
-                                autoclose: true,
-                                {#todayHighlight: true,#}
-                                {#minDate: new Date($('#hiddendelivdate').val()),#}
-                                monthNames : ['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'],
-                                dayNamesMin : ['Вс','Пн','Вт','Ср','Чт','Пт','Сб'],
-                            });
-                            {#$('#end_date').datepicker("setDate", new Date());#}
-                        </script>
-
                     <div class="input-group col-lg-2 col-md-4 pb-2 align-self-end">
                         <input class="form-control" id="site_input" value="{{ request.GET.site }}" type="text" placeholder="Сайт" name="site">
                         <div class="input-group-append dropleft">
@@ -166,7 +128,6 @@
                     {% endif %}
                 </a>
                 <div class="card-body pb-2">
-                    {{ car.similar_advertisement }}
                     <h5 class="card-title">{{ car.brand }} {{ car.model }} {{ car.year }}</h5>
                     <p class="card-text mb-0">
                         <small class="text-muted">Создано: {{ car.created_at }}</small>
@@ -265,5 +226,28 @@
         function insert_data_into_input(input, id) {
             document.getElementById(id).value=input.toString()
         }
+    </script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.7.1/js/bootstrap-datepicker.min.js"></script>
+    <script type="text/javascript">
+        $('#start_date').datepicker({
+            weekStart: 1,
+            daysOfWeekHighlighted: "6,0",
+            autoclose: true,
+            todayHighlight: true,
+            minDate: new Date($('#hiddendelivdate').val()),
+            monthNames : ['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'],
+            dayNamesMin : ['Вс','Пн','Вт','Ср','Чт','Пт','Сб'],
+        });
+
+        $('#end_date').datepicker({
+            weekStart: 1,
+            daysOfWeekHighlighted: "6,0",
+            autoclose: true,
+            todayHighlight: true,
+            minDate: new Date($('#hiddendelivdate').val()),
+            monthNames : ['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'],
+            dayNamesMin : ['Вс','Пн','Вт','Ср','Чт','Пт','Сб'],
+        });
     </script>
 {% endblock %}

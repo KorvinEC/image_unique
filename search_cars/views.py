@@ -179,7 +179,7 @@ class DatabaseList(ListView):
             )
         if duplicates:
             advertisements = advertisements.filter(
-                similar_advertisement__isnull=False
+                original=False
             )
         if url:
             advertisements = advertisements.filter(
