@@ -43,6 +43,13 @@
                                                 </div>
                                                 <p class="card-text collapse show" id="adv_text_{{ advertisement.id }}">{{ advertisement.info }}</p>
                                                 <p class="card-text mb-0">
+                                                    <small class="text-muted">Цена: {{ advertisement.price }}</small>
+                                                </p>
+                                                <p class="card-text mb-0">
+                                                    <small class="text-muted">Пробег: {{ advertisement.run }}</small>
+                                                </p>
+                                                <hr class="my-1">
+                                                <p class="card-text mb-0">
                                                     <small class="text-muted">Создано: {{ advertisement.created_at }}</small>
                                                 </p>
                                                 <p class="card-text mb-0">
@@ -115,6 +122,13 @@
                                                                 </div>
                                                             </div>
                                                             <p class="card-text collapse show" id="adv_text_{{ dup.id }}">{{ dup.info }}</p>
+                                                            <p class="card-text mb-0">
+                                                                <small class="text-muted">Цена: {{ dup.price }}</small>
+                                                            </p>
+                                                            <p class="card-text mb-0">
+                                                                <small class="text-muted">Пробег: {{ dup.run }}</small>
+                                                            </p>
+                                                            <hr class="my-1">
                                                             <p class="card-text mb-0">
                                                                 <small class="text-muted">Создано: {{ dup.created_at }}</small>
                                                             </p>

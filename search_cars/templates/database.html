@@ -14,29 +14,41 @@
 {#                    </div>#}
 {#                </div>#}
 {#            </main>#}
-{#<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>#}
-{#<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.7.1/js/bootstrap-datepicker.min.js"></script>#}
-{#<script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script><script type="text/javascript">#}
-{##}
-{#                $('#datepicker').datepicker({#}
-{#                    weekStart: 1,#}
-{#                    daysOfWeekHighlighted: "6,0",#}
-{#                    autoclose: true,#}
-{#                    todayHighlight: true,#}
-{#                    minDate: new Date($('#hiddendelivdate').val()),#}
-{#                    monthNames : ['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'],#}
-{#                    dayNamesMin : ['Вс','Пн','Вт','Ср','Чт','Пт','Сб'],#}
-{#                });#}
-{#                $('#datepicker').datepicker("setDate", new Date());#}
-{#            </script>#}
 {#        </div>#}
 {#    </div>#}
     <div class="row ">
         <div class="col ">
             <form>
                 <div class="row form-group mb-2">
-                    <div class="col-lg-2 col-md-6 pb-2"><input class="form-control" value="{{ request.GET.start_date }}" type="text" placeholder="С: 01/01/0001" name="start_date"></div>
-                    <div class="col-lg-2 col-md-6 pb-2"><input class="form-control" value="{{ request.GET.end_date }}" type="text" placeholder="По: 01/01/0001" name="end_date"></div>
+                    <div class="col-lg-2 col-md-6 pb-2"><input data-date-format="dd/mm/yyyy"  id="start_date" class="form-control" value="{{ request.GET.start_date }}" type="text" placeholder="Начальная дата" name="start_date"></div>
+                    <div class="col-lg-2 col-md-6 pb-2"><input data-date-format="dd/mm/yyyy"  id="end_date" class="form-control" value="{{ request.GET.end_date }}" type="text" placeholder="Конечная дата" name="end_date"></div>
+                        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+                        <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.7.1/js/bootstrap-datepicker.min.js"></script>
+                        <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
+                        <script type="text/javascript">
+                            $('#start_date').datepicker({
+                                weekStart: 1,
+                                daysOfWeekHighlighted: "6,0",
+                                autoclose: true,
+                                {#todayHighlight: true,#}
+                                {#minDate: new Date($('#hiddendelivdate').val()),#}
+                                monthNames : ['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'],
+                                dayNamesMin : ['Вс','Пн','Вт','Ср','Чт','Пт','Сб'],
+                            });
+                            {#$('#start_date').datepicker("setDate", new Date());#}
+
+                            $('#end_date').datepicker({
+                                weekStart: 1,
+                                daysOfWeekHighlighted: "6,0",
+                                autoclose: true,
+                                {#todayHighlight: true,#}
+                                {#minDate: new Date($('#hiddendelivdate').val()),#}
+                                monthNames : ['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'],
+                                dayNamesMin : ['Вс','Пн','Вт','Ср','Чт','Пт','Сб'],
+                            });
+                            {#$('#end_date').datepicker("setDate", new Date());#}
+                        </script>
+
                     <div class="input-group col-lg-2 col-md-4 pb-2 align-self-end">
                         <input class="form-control" id="site_input" value="{{ request.GET.site }}" type="text" placeholder="Сайт" name="site">
                         <div class="input-group-append dropleft">
@@ -56,8 +68,6 @@
                             </div>
                         </div>
                     </div>
-{#                    <div class="col-lg"></div>#}
-
                     <div class="input-group col-lg-2 col-md-4 pb-2 align-self-end">
                         <input class="form-control" id="brand_input" value="{{ request.GET.brand }}" type="text" placeholder="Бренд" name="brand">
                         <div class="input-group-append dropleft">
@@ -139,10 +149,16 @@
         </div>
     </div>
 
+{# -----------------------------------------------------Advertisement-------------------------------------------------#}
+
     <div class="card-columns pt-4">
         {% for car in cars %}
             <div class="card">
-                <a href="{% url 'advertisement' car.id %}">
+                {% if car.original %}
+                    <a href="{% url 'advertisement' car.id %}">
+                {% else %}
+                    <a href="{% url 'advertisement' car.similar_advertisement.all.0.id %}">
+                {% endif %}
                     {% if car.photos.all.0 %}
                         <img class="card-img-top" src="{{ car.photos.all.0.photo_url }}" alt="Card image cap" style="width: 100%;">
                     {% else %}
@@ -150,6 +166,7 @@
                     {% endif %}
                 </a>
                 <div class="card-body pb-2">
+                    {{ car.similar_advertisement }}
                     <h5 class="card-title">{{ car.brand }} {{ car.model }} {{ car.year }}</h5>
                     <p class="card-text mb-0">
                         <small class="text-muted">Создано: {{ car.created_at }}</small>
@@ -165,11 +182,17 @@
                                 </small>
                             </p>
                         </div>
-                        <div class="col-auto ml-auto d-flex align-items-center">
-                            {% if car.similar_advertisement.all %}
-                                <span class="badge badge-warning">Дубликатов: {{ car.similar_advertisement.all|length }}</span>
-                            {% endif %}
-                        </div>
+                        {% if car.original %}
+                            <div class="col-auto ml-auto d-flex align-items-center">
+                                {% if car.similar_advertisement.all %}
+                                    <span class="badge badge-success">Дубликатов: {{ car.similar_advertisement.all|length }}</span>
+                                {% endif %}
+                            </div>
+                        {% else %}
+                            <div class="col-auto ml-auto d-flex align-items-center">
+                                <span class="badge badge-warning">Дубликат</span>
+                            </div>
+                        {% endif %}
                     </div>
                 </div>
             </div>
@@ -196,6 +219,8 @@
 
         {% endfor %}
     </div>
+
+{#---------------------------------------------------pagination-------------------------------------------------------#}
 
     <div class="row">
         <div class="col justify-content-md-center">

@@ -1,5 +1,7 @@
 from django.db import models
 from django.utils import timezone
+from django.db.models.signals import pre_delete
+from django.dispatch.dispatcher import receiver
 
 
 # Create your models here.
@@ -13,6 +15,11 @@ class AdvertisementPhotos(models.Model):
 
     def __str__(self):
         return '{} {} {} {}'.format(self.adv_id, self.photo_url, self.photo, self.avg_hash)
+
+
+@receiver(pre_delete, sender=AdvertisementPhotos)
+def mymodel_delete(sender, instance, **kwargs):
+    instance.photo.delete(False)
 
 
 class Advertisement(models.Model):

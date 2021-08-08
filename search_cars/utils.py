@@ -231,126 +231,130 @@ def create_new_advertisement_threading(post_adv_data: dict, pool, logger=None):
 
     # Находим дупликаты полученного объявления
 
-    dup_advs = Advertisement.objects.filter(
-        year=post_adv_data['year'],
-        brand__icontains=post_adv_data['brand'],
-        model__icontains=post_adv_data['model'],
-        original=True,
-        added_at__lte=post_adv_data['added_at'],
-    )
-
-    # Загрузка изображений из POST запроса с созданием класса AdvertisementPhotos
-
-    logger.debug(
-        f"{new_adv} Загрузка фотографий {len(post_adv_data['links'])}"
-    )
-
-    post_images = async_create_adv_photos(post_adv_data['links'], new_adv)
-
-    # Проверка дубликатов по пробегу и цене
-
-    if ('run' and 'price') in post_adv_data.keys():
-        dup_adv = dup_advs.exclude(
-            run__isnull=True,
-            price__isnull=True,
-        )
-        dup_adv = dup_adv.filter(
-            # run__gt=post_adv_data['run'] - 1000,
-            # run__lt=post_adv_data['run'] + 1000,
-            # price__gt=post_adv_data['price'] - 10_000,
-            # price__lt=post_adv_data['price'] + 10_000,
-
-            run=post_adv_data['run'],
-            price=post_adv_data['price'],
+    try:
+        dup_advs = Advertisement.objects.filter(
+            year=post_adv_data['year'],
+            brand__icontains=post_adv_data['brand'],
+            model__icontains=post_adv_data['model'],
+            original=True,
+            added_at__lte=post_adv_data['added_at'],
         )
 
-        # print(dup_adv)
+        # Загрузка изображений из POST запроса с созданием класса AdvertisementPhotos
 
-        if dup_adv:
-            dup_adv = dup_adv.first()
+        logger.debug(
+            f"{new_adv} Загрузка фотографий {len(post_adv_data['links'])}"
+        )
 
-            logger.debug(
-                f"{new_adv} Найден дубликат по пробегу и цене {dup_adv}"
+        post_images = async_create_adv_photos(post_adv_data['links'], new_adv)
+
+        # Проверка дубликатов по пробегу и цене
+
+        if ('run' and 'price') in post_adv_data.keys():
+            dup_adv = dup_advs.exclude(
+                run__isnull=True,
+                price__isnull=True,
+            )
+            dup_adv = dup_adv.filter(
+                # run__gt=post_adv_data['run'] - 1000,
+                # run__lt=post_adv_data['run'] + 1000,
+                # price__gt=post_adv_data['price'] - 10_000,
+                # price__lt=post_adv_data['price'] + 10_000,
+
+                run=post_adv_data['run'],
+                price=post_adv_data['price'],
             )
 
-            res = save_adv_and_photos(new_adv, post_images, False)
+            if dup_adv:
+                dup_adv = dup_adv.first()
 
-            dup_adv.similar_advertisement.add(new_adv)
-            dup_adv.save()
+                logger.debug(
+                    f"{new_adv} Найден дубликат по пробегу и цене {dup_adv}"
+                )
 
-            return res
+                res = save_adv_and_photos(new_adv, post_images, False)
 
-    # Проверяем объявления
+                dup_adv.similar_advertisement.add(new_adv)
+                dup_adv.save()
 
-    if not dup_advs:
-        # Если не найдено подходящих объявлений, то возвращается значение unique : True
+                return res
 
-        if logger:
-            logger.debug(
-                f'{new_adv} Нет дублированных объявлений'
-            )
+        # Проверяем объявления
 
-        return save_adv_and_photos(new_adv, post_images, True)
-    else:
-        # Проверка найденных дупликатов
+        if not dup_advs:
+            # Если не найдено подходящих объявлений, то возвращается значение unique : True
 
-        if logger:
-            logger.debug(
-                f'{new_adv} Найдено объявлений: {len(dup_advs)}'
-            )
-
-        # Подготавливаем изображения
-
-        for dup_adv in dup_advs:
             if logger:
                 logger.debug(
-                    f'{new_adv} Проверка объявления {dup_adv}'
-                    f' с {len(dup_adv.photos.all())} фотографиями'
+                    f'{new_adv} Нет дублированных объявлений'
                 )
 
-            dup_images = []
+            return save_adv_and_photos(new_adv, post_images, True)
+        else:
+            # Проверка найденных дупликатов
 
-            links = []
+            if logger:
+                logger.debug(
+                    f'{new_adv} Найдено объявлений: {len(dup_advs)}'
+                )
 
-            for photo in dup_adv.photos.all():
-                if not photo.photo:
-                    links.append(photo)
-                else:
-                    if not os.path.exists(photo.photo.path):
+            # Подготавливаем изображения
+
+            for dup_adv in dup_advs:
+                if logger:
+                    logger.debug(
+                        f'{new_adv} Проверка объявления {dup_adv}'
+                        f' с {len(dup_adv.photos.all())} фотографиями'
+                    )
+
+                dup_images = []
+
+                links = []
+
+                for photo in dup_adv.photos.all():
+                    if not photo.photo:
                         links.append(photo)
+                    else:
+                        if not os.path.exists(photo.photo.path):
+                            links.append(photo)
 
-                dup_images.append(
-                    photo
+                    dup_images.append(
+                        photo
+                    )
+
+                if links:
+                    async_save_photos(links)
+
+                all_args = product(post_images, dup_images)
+
+                for args in chunks(all_args, 4):
+
+                    results = pool.starmap(hash_orb_match_template, args)
+
+                    if True in results:
+                        if logger:
+                            logger.debug(
+                                f'{new_adv} Найдено совпадение {dup_adv}'
+                            )
+
+                        res = save_adv_and_photos(new_adv, post_images, False)
+
+                        dup_adv.similar_advertisement.add(new_adv)
+                        dup_adv.save()
+
+                        return res
+
+            if logger:
+                logger.debug(
+                    f'{new_adv} Нет дублированных объявлений'
                 )
 
-            if links:
-                async_save_photos(links)
-
-            all_args = product(post_images, dup_images)
-
-            for args in chunks(all_args, 4):
-
-                results = pool.starmap(hash_orb_match_template, args)
-
-                if True in results:
-                    if logger:
-                        logger.debug(
-                            f'{new_adv} Найдено совпадение {dup_adv}'
-                        )
-
-                    res = save_adv_and_photos(new_adv, post_images, False)
-
-                    dup_adv.similar_advertisement.add(new_adv)
-                    dup_adv.save()
-
-                    return res
-
-        if logger:
-            logger.debug(
-                f'{new_adv} Нет дублированных объявлений'
-            )
-
-        return save_adv_and_photos(new_adv, post_images, True)
+            return save_adv_and_photos(new_adv, post_images, True)
+    except Exception as ex:
+        logger.error(
+            f'Error occurred {ex}'
+        )
+        new_adv.delete()
 
 
 def chunks(iterable, size):

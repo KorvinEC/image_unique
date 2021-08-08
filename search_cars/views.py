@@ -1,20 +1,29 @@
 from django.shortcuts import render
 from django.http import JsonResponse
-from rest_framework.views import APIView
 from django.views.generic.list import ListView
 from django.views.generic.detail import DetailView
 from django.views.generic import TemplateView
+from django.views.generic.edit import FormView
+from rest_framework.views import APIView
 from django.conf import settings
-
-import requests
-from .models import Advertisement
+from django.http import HttpResponse
+from django.db.models import Count
 from django.utils import timezone
-import logging
+
+from .utils import create_new_advertisement_threading, get_updates
+from .models import Advertisement
+from .forms import ImageUploadForm
 
 from multiprocessing.dummy import Pool as ThreadPool
 from datetime import datetime
-from .utils import create_new_advertisement_threading, get_updates
+from PIL import Image
+from rembg.bg import remove
+import base64
+import io
+import requests
+import logging
 import re
+
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -29,9 +38,6 @@ formatter = logging.Formatter(
 
 ch.setFormatter(formatter)
 logger.addHandler(ch)
-
-
-from django.db.models import Count
 
 
 def index(request):
@@ -54,6 +60,55 @@ def index(request):
     return render(request, 'index.html', {'cars': ret})
 
 
+class ImageBackgroundRemoveView(FormView):
+    # Обработчик вставки машины на задний фон
+
+    template_name = 'image_background_remove.html'
+    form_class = ImageUploadForm
+    success_url = 'image-background-remove'
+
+    def form_valid(self, form):
+        img_list = []
+
+        raw_bg = self.request.FILES.get('background').read()
+
+        backgroud_image = Image.open(io.BytesIO(raw_bg)).convert("RGBA")
+
+        for i in self.request.FILES.getlist('images'):
+            content_type = i.content_type
+            result = remove(i.read())
+
+            trimmed_car = Image.open(io.BytesIO(result))
+
+            trimmed_car = trimmed_car.crop(trimmed_car.getbbox())
+
+            width = (backgroud_image.width // 2) - (trimmed_car.width // 2)
+            height = (backgroud_image.height * 3//4) - (trimmed_car.height // 2)
+
+            backgroud_image.paste(
+                trimmed_car,
+                (width, height),
+                trimmed_car
+            )
+
+            output_buffer = io.BytesIO()
+            backgroud_image.save(output_buffer, format='PNG')
+
+            encoded_img  = base64.b64encode(
+                output_buffer.getvalue()
+            )
+
+            decoded_img = encoded_img.decode('utf-8')
+
+            img_data = f"data:{content_type};base64,{decoded_img}"
+            img_list.append(img_data)
+
+        context = self.get_context_data()
+        context['images'] = img_list
+        context['form'] = form
+        return self.render_to_response(context)
+
+
 class GraphsView(TemplateView):
     # Обработчик страницы с графиками
 
@@ -64,13 +119,10 @@ class GraphsView(TemplateView):
 
         context['title'] = 'Графики'
 
-        sites_count = Advertisement.objects.values('site').annotate(Count('site')).order_by('-site__count')
+        sites_count = Advertisement.objects.filter(original=True).values('site').annotate(Count('site')).order_by('-site__count')
         # sites_count = Advertisement.objects.filter(~Q).values('site').annotate(Count('site')).order_by('-site__count')
 
-        dup_sites_count = sites_count.filter(original=False)
-
-        # print(sites_count)
-        # print(dup_sites_count)
+        dup_sites_count = Advertisement.objects.filter(original=False).values('site').annotate(Count('site')).order_by('-site__count')
 
         context['sites_count']  = sites_count
         context['total_sites']  = sum([i['site__count'] for i in sites_count])
@@ -105,16 +157,15 @@ class DatabaseList(ListView):
         url_reg = re.compile(r"https?://(www\.)?")
         url = url_reg.sub('', raw_url).strip().strip('/') if raw_url else None
 
-        advertisements = Advertisement.objects.filter(original=True)
-        # advertisements = Advertisement.objects.all()
+        advertisements = Advertisement.objects.all()
 
         if brand and len(brand) != 0:
             advertisements = advertisements.filter(
-                brand__contains=brand,
+                brand__contains=brand.strip(),
             )
         if model and len(model) != 0:
             advertisements = advertisements.filter(
-                model__contains=model,
+                model__contains=model.strip(),
             )
         if start_date:
             start_date = timezone.make_aware(datetime.strptime(start_date, '%d/%m/%Y'))
@@ -132,19 +183,19 @@ class DatabaseList(ListView):
             )
         if url:
             advertisements = advertisements.filter(
-                advertisement_url__contains =url
+                advertisement_url__contains=url
             )
         if year:
             advertisements = advertisements.filter(
-                year=year
+                year=year.strip()
             )
         if site:
             advertisements = advertisements.filter(
-                site=site
+                site=site.strip()
             )
         if adv_id:
             advertisements = advertisements.filter(
-                advertisement_id=adv_id
+                advertisement_id=adv_id.strip()
             )
         if sort_by == 'created':
             advertisements = advertisements.order_by('-created_at')
@@ -201,6 +252,7 @@ class AdvertisementPost(DetailView):
 
 
 def test(request):
+    # advs = Advertisement.objects.all().delete()
     link = 'http://crwl.ru/api/rest/latest/get_ads/'
     payload = {
         'api_key' : settings.API_KEY,
@@ -210,8 +262,6 @@ def test(request):
     }
     result = requests.get(link, params=payload)
     json_result = result.json()
-
-    print(json_result)
 
     pool = ThreadPool()
 
@@ -276,9 +326,6 @@ def test_2(request):
     pool.join()
 
     return JsonResponse({'result': result})
-
-
-from django.http import HttpResponse
 
 
 def test_4(request):

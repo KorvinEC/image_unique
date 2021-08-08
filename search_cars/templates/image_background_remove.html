@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+{% block content %}
+    <div class="container pt-4">
+        <div class="row mb-4">
+            <form method="post" action="" enctype="multipart/form-data">
+                {% csrf_token %}
+                {% for field in form %}
+                    <div class="form-group">
+                        {{ field.label_tag }} {{ field }}
+                    </div>
+                    {{ field.errors }}
+                {% endfor %}
+                <button class="btn btn-light btn-outline-secondary form-control"  type="submit">Отправить</button>
+            </form>
+        </div>
+        <div class="row mb-4">
+            {% for img in images %}
+                <img src="{{ img }}" class="img-thumbnail">
+            {% endfor %}
+        </div>
+    </div>
+{#    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>#}
+{#    <script>#}
+{#    $(document).ready(function() {#}
+{#        $("img").on("click", function(event) {#}
+{#            var x = event.pageX - this.offsetLeft;#}
+{#            var y = event.pageY - this.offsetTop;#}
+{#            alert("X Coordinate: " + x + " Y Coordinate: " + y);#}
+{#        });#}
+{#     });#}
+{#    </script>#}
+{% endblock %}
