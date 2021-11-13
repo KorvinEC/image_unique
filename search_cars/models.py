@@ -39,7 +39,7 @@ class Advertisement(models.Model):
     run = models.IntegerField(verbose_name='Пробег', blank=True, null=True)
     price = models.IntegerField(verbose_name="Цена", blank=True, null=True)
 
-    original = models.BooleanField(verbose_name='Оригинальное объявление', null=True)
+    original = models.BooleanField(verbose_name='Оригинальное объявление')
 
     created_at = models.DateTimeField(verbose_name="Дата добавления в базу", db_index=True)
     added_at = models.DateTimeField(verbose_name="Дата появления объявления", blank=True)

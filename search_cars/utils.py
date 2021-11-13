@@ -219,6 +219,9 @@ def create_new_advertisement_threading(post_adv_data: dict, pool, logger=None):
     new_adv.site              = post_adv_data['site']
     new_adv.added_at          = post_adv_data['added_at']
 
+    #Временное решение
+    new_adv.original          = True
+
     if ('latitude' and 'longitude') in post_adv_data.keys():
         new_adv.latitude      = post_adv_data['latitude']
         new_adv.longitude     = post_adv_data['longitude']
@@ -256,11 +259,6 @@ def create_new_advertisement_threading(post_adv_data: dict, pool, logger=None):
                 price__isnull=True,
             )
             dup_adv = dup_adv.filter(
-                # run__gt=post_adv_data['run'] - 1000,
-                # run__lt=post_adv_data['run'] + 1000,
-                # price__gt=post_adv_data['price'] - 10_000,
-                # price__lt=post_adv_data['price'] + 10_000,
-
                 run=post_adv_data['run'],
                 price=post_adv_data['price'],
             )

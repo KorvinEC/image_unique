@@ -15,7 +15,7 @@ urlpatterns = [
     # path('test_4', views.test_4, name='test_4'),
     # path('test_5', views.test_5, name='test_5'),
     # path('test_request', views.test_request, name='test_request'),
-    path('test_6', views.test_6, name='test_6'),
+    # path('test_6', views.test_6, name='test_6'),
     # path('admin', views.database, name='admin'),
     # path('test', , name='test'),
 ]

@@ -157,6 +157,8 @@ class DatabaseList(ListView):
         url_reg = re.compile(r"https?://(www\.)?")
         url = url_reg.sub('', raw_url).strip().strip('/') if raw_url else None
 
+
+        # Надо переделать в будущем, так как это костыль. Если не добавляется оригинальность к значению, то появляются баги.
         advertisements = Advertisement.objects.all()
 
         if brand and len(brand) != 0:
@@ -257,7 +259,7 @@ def test(request):
     payload = {
         'api_key' : settings.API_KEY,
         'region'  : '3504',
-        'last'    : str(1),
+        'last'    : str(24),
         # 'last'    : 1
     }
     result = requests.get(link, params=payload)
@@ -480,16 +482,16 @@ class CheckUnique(APIView):
         return JsonResponse({'unique': result})
 
 
-def test_6(request):
-    advs_to_del = Advertisement.objects.filter(
-        original=False,
-        created_at__gte=timezone.make_aware(datetime.fromisoformat('2021-07-25 00:00:00'))
-    )
-    for i in advs_to_del:
-        logger.debug(f'Deleting {i} {i.created_at}')
-        i.delete()
-
-    return HttpResponse()
+# def test_6(request):
+#     advs_to_del = Advertisement.objects.filter(
+#         original=False,
+#         created_at__gte=timezone.make_aware(datetime.fromisoformat('2021-07-25 00:00:00'))
+#     )
+#     for i in advs_to_del:
+#         logger.debug(f'Deleting {i} {i.created_at}')
+#         i.delete()
+#
+#     return HttpResponse()
 
 
 
